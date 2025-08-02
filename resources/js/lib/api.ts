@@ -233,6 +233,27 @@ export const chatApi = {
     }),
 };
 
+// Admin Chat API
+export const adminChatApi = {
+  getMessages: (params?: { limit?: number; before_id?: number }) =>
+    apiRequest<{ messages: any[]; has_more: boolean }>('/admin/chat' + (params ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString() : '')),
+
+  getRecent: () =>
+    apiRequest<{ messages: any[] }>('/admin/chat/recent'),
+
+  sendMessage: (data: { message: string }) =>
+    apiRequest<{ message: any }>('/admin/chat', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  sendTyping: (data: { is_typing: boolean }) =>
+    apiRequest<{ status: string }>('/admin/chat/typing', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
 // Health check
 export const healthApi = {
   check: () =>

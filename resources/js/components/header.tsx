@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { authApi } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Menu, X, MessageCircle } from "lucide-react";
+import { Menu, X, MessageCircle, Shield } from "lucide-react";
 
 import { ModeToggle } from "./mode-toggle";
 import UserMenu from "./user-menu";
@@ -19,6 +19,16 @@ export default function Header() {
   });
 
   const isAuthenticated = !!localStorage.getItem('auth_token') && !userQuery.error;
+  const isAdmin = userQuery.data?.user?.is_admin;
+
+  // Debug logging (remove this later)
+  console.log('Header Debug:', {
+    hasToken: !!localStorage.getItem('auth_token'),
+    userQueryError: userQuery.error,
+    userData: userQuery.data,
+    isAuthenticated,
+    isAdmin
+  });
 
   const publicLinks = [
     { to: "/", label: "Home" },
@@ -32,6 +42,7 @@ export default function Header() {
     { to: "/dashboard", label: "Dashboard" },
     { to: "/todos", label: "Todos" },
     { to: "/chat", label: "Chat", icon: MessageCircle },
+    ...(isAdmin ? [{ to: "/admin-chat", label: "Admin Chat", icon: Shield }] : []),
     { to: "/profile", label: "Profile" },
     { to: "/health", label: "Health" },
     { to: "/install-pwa", label: "Install App" },

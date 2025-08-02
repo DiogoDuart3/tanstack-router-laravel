@@ -15,6 +15,7 @@ import { Route as InstallPwaRouteImport } from './routes/install-pwa'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as AdminChatRouteImport } from './routes/admin-chat'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
@@ -49,6 +50,11 @@ const ChatRoute = ChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminChatRoute = AdminChatRouteImport.update({
+  id: '/admin-chat',
+  path: '/admin-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -67,6 +73,7 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin-chat': typeof AdminChatRoute
   '/chat': typeof ChatRoute
   '/dashboard': typeof DashboardRoute
   '/health': typeof HealthRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin-chat': typeof AdminChatRoute
   '/chat': typeof ChatRoute
   '/dashboard': typeof DashboardRoute
   '/health': typeof HealthRoute
@@ -90,6 +98,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin-chat': typeof AdminChatRoute
   '/chat': typeof ChatRoute
   '/dashboard': typeof DashboardRoute
   '/health': typeof HealthRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin-chat'
     | '/chat'
     | '/dashboard'
     | '/health'
@@ -114,6 +124,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin-chat'
     | '/chat'
     | '/dashboard'
     | '/health'
@@ -125,6 +136,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin-chat'
     | '/chat'
     | '/dashboard'
     | '/health'
@@ -137,6 +149,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminChatRoute: typeof AdminChatRoute
   ChatRoute: typeof ChatRoute
   DashboardRoute: typeof DashboardRoute
   HealthRoute: typeof HealthRoute
@@ -191,6 +204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-chat': {
+      id: '/admin-chat'
+      path: '/admin-chat'
+      fullPath: '/admin-chat'
+      preLoaderRoute: typeof AdminChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -217,6 +237,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminChatRoute: AdminChatRoute,
   ChatRoute: ChatRoute,
   DashboardRoute: DashboardRoute,
   HealthRoute: HealthRoute,

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AdminChatController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\DashboardController;
@@ -42,5 +43,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('{todo}', [TodoController::class, 'update']);
         Route::delete('{todo}', [TodoController::class, 'destroy']);
         Route::post('sync', [TodoController::class, 'sync']);
+    });
+
+    // Admin chat routes (requires admin privileges)
+    Route::prefix('admin/chat')->group(function () {
+        Route::get('/', [AdminChatController::class, 'index']);
+        Route::get('recent', [AdminChatController::class, 'recent']);
+        Route::post('/', [AdminChatController::class, 'store']);
+        Route::post('typing', [AdminChatController::class, 'typing']);
     });
 });

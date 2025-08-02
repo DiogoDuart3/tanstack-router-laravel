@@ -15,3 +15,13 @@ Broadcast::channel('public-chat', function () {
 Broadcast::channel('public-chat-typing', function () {
     return true;
 });
+
+// Admin chat channel - only admins can listen
+Broadcast::channel('admin-chat', function ($user) {
+    return $user && $user->isAdmin();
+});
+
+// Admin typing indicator channel - only admins can listen
+Broadcast::channel('admin-chat-typing', function ($user) {
+    return $user && $user->isAdmin();
+});
