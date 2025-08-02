@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\TodoController;
 use App\Http\Controllers\Api\UserController;
@@ -18,6 +19,13 @@ Route::prefix('auth')->group(function () {
 // Health check
 Route::get('health', function () {
     return response()->json(['status' => 'ok', 'timestamp' => now()]);
+});
+
+// Public chat routes (accessible to everyone)
+Route::prefix('chat')->group(function () {
+    Route::get('/', [ChatController::class, 'index']);
+    Route::get('recent', [ChatController::class, 'recent']);
+    Route::post('/', [ChatController::class, 'store']);
 });
 
 // Protected routes

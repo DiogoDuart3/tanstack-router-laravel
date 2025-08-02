@@ -22,6 +22,7 @@ export default function Header() {
 
   const publicLinks = [
     { to: "/", label: "Home" },
+    { to: "/chat", label: "Chat", icon: MessageCircle },
     { to: "/health", label: "Health" },
     { to: "/install-pwa", label: "Install App" },
   ];
@@ -30,6 +31,7 @@ export default function Header() {
     { to: "/", label: "Home" },
     { to: "/dashboard", label: "Dashboard" },
     { to: "/todos", label: "Todos" },
+    { to: "/chat", label: "Chat", icon: MessageCircle },
     { to: "/profile", label: "Profile" },
     { to: "/health", label: "Health" },
     { to: "/install-pwa", label: "Install App" },

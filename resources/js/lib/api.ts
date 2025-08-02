@@ -212,6 +212,21 @@ export const profileApi = {
     }),
 };
 
+// Chat API
+export const chatApi = {
+  getMessages: (params?: { limit?: number; before_id?: number }) =>
+    apiRequest<{ messages: any[]; has_more: boolean }>('/chat' + (params ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString() : '')),
+
+  getRecent: () =>
+    apiRequest<{ messages: any[] }>('/chat/recent'),
+
+  sendMessage: (data: { message: string; username?: string }) =>
+    apiRequest<{ message: any }>('/chat', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
 // Health check
 export const healthApi = {
   check: () =>
