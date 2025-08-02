@@ -1,0 +1,26 @@
+{
+  "name": "Laravel TanStack Router App",
+  "short_name": "Laravel App",
+  "description": "Laravel TanStack Router PWA with offline capabilities",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0c0c0c",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "features": [
+    "offline",
+    "background-sync"
+  ]
+}

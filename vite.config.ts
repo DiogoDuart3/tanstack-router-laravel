@@ -1,4 +1,6 @@
+import { VitePWA } from 'vite-plugin-pwa';
 import tailwindcss from '@tailwindcss/vite';
+import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { resolve } from 'node:path';
@@ -8,18 +10,45 @@ export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
-            ssr: 'resources/js/ssr.tsx',
             refresh: true,
         }),
-        react(),
         tailwindcss(),
+        tanstackRouter({
+            routesDirectory: './resources/js/routes',
+            generatedRouteTree: './resources/js/routeTree.gen.ts',
+        }),
+        react(),
+        VitePWA({
+            registerType: 'autoUpdate',
+            manifest: {
+                name: 'Laravel TanStack Router App',
+                short_name: 'Laravel App',
+                description: 'Laravel TanStack Router PWA Application',
+                theme_color: '#0c0c0c',
+            },
+            pwaAssets: { disabled: false, config: true },
+            devOptions: { enabled: true },
+            workbox: {
+                globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+                runtimeCaching: [
+                    {
+                        urlPattern: /^\/api\//,
+                        handler: 'NetworkFirst',
+                        options: {
+                            cacheName: 'api-cache',
+                            networkTimeoutSeconds: 3,
+                        },
+                    },
+                ],
+            },
+        }),
     ],
     esbuild: {
         jsx: 'automatic',
     },
     resolve: {
         alias: {
-            'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy'),
+            '@': resolve(__dirname, './resources/js'),
         },
     },
 });
