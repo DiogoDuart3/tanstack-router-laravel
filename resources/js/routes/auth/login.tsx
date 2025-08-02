@@ -23,7 +23,7 @@ function LoginComponent() {
     onSuccess: (data) => {
       localStorage.setItem('auth_token', data.token);
       toast.success('Logged in successfully');
-      router.navigate({ to: '/go/dashboard' });
+      router.navigate({ to: '/dashboard' });
     },
     onError: (error) => {
       toast.error(`Login failed: ${error.message}`);

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import PWAInstallPrompt from "@/components/pwa-install-prompt";
 
-export const Route = createFileRoute("/go/install-pwa")({
+export const Route = createFileRoute("/install-pwa")({
   component: InstallPWAComponent,
 });
 

@@ -9,43 +9,43 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TodosRouteImport } from './routes/todos'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as InstallPwaRouteImport } from './routes/install-pwa'
+import { Route as HealthRouteImport } from './routes/health'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as GoTodosRouteImport } from './routes/go/todos'
-import { Route as GoProfileRouteImport } from './routes/go/profile'
-import { Route as GoInstallPwaRouteImport } from './routes/go/install-pwa'
-import { Route as GoHealthRouteImport } from './routes/go/health'
-import { Route as GoDashboardRouteImport } from './routes/go/dashboard'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 
+const TodosRoute = TodosRouteImport.update({
+  id: '/todos',
+  path: '/todos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstallPwaRoute = InstallPwaRouteImport.update({
+  id: '/install-pwa',
+  path: '/install-pwa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HealthRoute = HealthRouteImport.update({
+  id: '/health',
+  path: '/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GoTodosRoute = GoTodosRouteImport.update({
-  id: '/go/todos',
-  path: '/go/todos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GoProfileRoute = GoProfileRouteImport.update({
-  id: '/go/profile',
-  path: '/go/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GoInstallPwaRoute = GoInstallPwaRouteImport.update({
-  id: '/go/install-pwa',
-  path: '/go/install-pwa',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GoHealthRoute = GoHealthRouteImport.update({
-  id: '/go/health',
-  path: '/go/health',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GoDashboardRoute = GoDashboardRouteImport.update({
-  id: '/go/dashboard',
-  path: '/go/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
@@ -61,121 +61,121 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/health': typeof HealthRoute
+  '/install-pwa': typeof InstallPwaRoute
+  '/profile': typeof ProfileRoute
+  '/todos': typeof TodosRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/go/dashboard': typeof GoDashboardRoute
-  '/go/health': typeof GoHealthRoute
-  '/go/install-pwa': typeof GoInstallPwaRoute
-  '/go/profile': typeof GoProfileRoute
-  '/go/todos': typeof GoTodosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/health': typeof HealthRoute
+  '/install-pwa': typeof InstallPwaRoute
+  '/profile': typeof ProfileRoute
+  '/todos': typeof TodosRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/go/dashboard': typeof GoDashboardRoute
-  '/go/health': typeof GoHealthRoute
-  '/go/install-pwa': typeof GoInstallPwaRoute
-  '/go/profile': typeof GoProfileRoute
-  '/go/todos': typeof GoTodosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/health': typeof HealthRoute
+  '/install-pwa': typeof InstallPwaRoute
+  '/profile': typeof ProfileRoute
+  '/todos': typeof TodosRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/go/dashboard': typeof GoDashboardRoute
-  '/go/health': typeof GoHealthRoute
-  '/go/install-pwa': typeof GoInstallPwaRoute
-  '/go/profile': typeof GoProfileRoute
-  '/go/todos': typeof GoTodosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/dashboard'
+    | '/health'
+    | '/install-pwa'
+    | '/profile'
+    | '/todos'
     | '/auth/login'
     | '/auth/register'
-    | '/go/dashboard'
-    | '/go/health'
-    | '/go/install-pwa'
-    | '/go/profile'
-    | '/go/todos'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/dashboard'
+    | '/health'
+    | '/install-pwa'
+    | '/profile'
+    | '/todos'
     | '/auth/login'
     | '/auth/register'
-    | '/go/dashboard'
-    | '/go/health'
-    | '/go/install-pwa'
-    | '/go/profile'
-    | '/go/todos'
   id:
     | '__root__'
     | '/'
+    | '/dashboard'
+    | '/health'
+    | '/install-pwa'
+    | '/profile'
+    | '/todos'
     | '/auth/login'
     | '/auth/register'
-    | '/go/dashboard'
-    | '/go/health'
-    | '/go/install-pwa'
-    | '/go/profile'
-    | '/go/todos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
+  HealthRoute: typeof HealthRoute
+  InstallPwaRoute: typeof InstallPwaRoute
+  ProfileRoute: typeof ProfileRoute
+  TodosRoute: typeof TodosRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
-  GoDashboardRoute: typeof GoDashboardRoute
-  GoHealthRoute: typeof GoHealthRoute
-  GoInstallPwaRoute: typeof GoInstallPwaRoute
-  GoProfileRoute: typeof GoProfileRoute
-  GoTodosRoute: typeof GoTodosRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/todos': {
+      id: '/todos'
+      path: '/todos'
+      fullPath: '/todos'
+      preLoaderRoute: typeof TodosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/install-pwa': {
+      id: '/install-pwa'
+      path: '/install-pwa'
+      fullPath: '/install-pwa'
+      preLoaderRoute: typeof InstallPwaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/health': {
+      id: '/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof HealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/go/todos': {
-      id: '/go/todos'
-      path: '/go/todos'
-      fullPath: '/go/todos'
-      preLoaderRoute: typeof GoTodosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/go/profile': {
-      id: '/go/profile'
-      path: '/go/profile'
-      fullPath: '/go/profile'
-      preLoaderRoute: typeof GoProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/go/install-pwa': {
-      id: '/go/install-pwa'
-      path: '/go/install-pwa'
-      fullPath: '/go/install-pwa'
-      preLoaderRoute: typeof GoInstallPwaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/go/health': {
-      id: '/go/health'
-      path: '/go/health'
-      fullPath: '/go/health'
-      preLoaderRoute: typeof GoHealthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/go/dashboard': {
-      id: '/go/dashboard'
-      path: '/go/dashboard'
-      fullPath: '/go/dashboard'
-      preLoaderRoute: typeof GoDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/register': {
@@ -197,13 +197,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
+  HealthRoute: HealthRoute,
+  InstallPwaRoute: InstallPwaRoute,
+  ProfileRoute: ProfileRoute,
+  TodosRoute: TodosRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
-  GoDashboardRoute: GoDashboardRoute,
-  GoHealthRoute: GoHealthRoute,
-  GoInstallPwaRoute: GoInstallPwaRoute,
-  GoProfileRoute: GoProfileRoute,
-  GoTodosRoute: GoTodosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

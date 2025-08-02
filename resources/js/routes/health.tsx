@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { healthApi } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 
-export const Route = createFileRoute("/go/health")({
+export const Route = createFileRoute("/health")({
   component: HealthComponent,
 });
 

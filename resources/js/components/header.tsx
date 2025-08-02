@@ -22,17 +22,17 @@ export default function Header() {
 
   const publicLinks = [
     { to: "/", label: "Home" },
-    { to: "/go/health", label: "Health" },
-    { to: "/go/install-pwa", label: "Install App" },
+    { to: "/health", label: "Health" },
+    { to: "/install-pwa", label: "Install App" },
   ];
 
   const authenticatedLinks = [
     { to: "/", label: "Home" },
-    { to: "/go/dashboard", label: "Dashboard" },
-    { to: "/go/todos", label: "Todos" },
-    { to: "/go/profile", label: "Profile" },
-    { to: "/go/health", label: "Health" },
-    { to: "/go/install-pwa", label: "Install App" },
+    { to: "/dashboard", label: "Dashboard" },
+    { to: "/todos", label: "Todos" },
+    { to: "/profile", label: "Profile" },
+    { to: "/health", label: "Health" },
+    { to: "/install-pwa", label: "Install App" },
   ];
 
   const links = isAuthenticated ? authenticatedLinks : publicLinks;

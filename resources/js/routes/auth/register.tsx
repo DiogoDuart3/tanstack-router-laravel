@@ -25,7 +25,7 @@ function RegisterComponent() {
     onSuccess: (data) => {
       localStorage.setItem('auth_token', data.token);
       toast.success('Account created successfully');
-      router.navigate({ to: '/go/dashboard' });
+      router.navigate({ to: '/dashboard' });
     },
     onError: (error) => {
       toast.error(`Registration failed: ${error.message}`);

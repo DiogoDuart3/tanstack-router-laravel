@@ -8,6 +8,9 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
     plugins: [
+        react({
+            jsxImportSource: 'react',
+        }),
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             refresh: true,
@@ -17,7 +20,6 @@ export default defineConfig({
             routesDirectory: './resources/js/routes',
             generatedRouteTree: './resources/js/routeTree.gen.ts',
         }),
-        react(),
         VitePWA({
             registerType: 'autoUpdate',
             manifest: {
@@ -45,6 +47,7 @@ export default defineConfig({
     ],
     esbuild: {
         jsx: 'automatic',
+        jsxImportSource: 'react',
     },
     resolve: {
         alias: {

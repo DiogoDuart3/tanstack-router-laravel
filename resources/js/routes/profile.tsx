@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import React, { useState } from "react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/go/profile")({
+export const Route = createFileRoute("/profile")({
   component: ProfileComponent,
 });
 

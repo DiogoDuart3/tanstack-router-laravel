@@ -99,7 +99,7 @@ export default function UserMenu() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/go/profile" className="flex items-center gap-2 cursor-pointer">
+          <Link to="/profile" className="flex items-center gap-2 cursor-pointer">
             <User className="h-4 w-4" />
             Profile Settings
           </Link>
