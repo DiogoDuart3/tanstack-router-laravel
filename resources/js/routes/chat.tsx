@@ -28,9 +28,11 @@ function ChatComponent() {
   const [message, setMessage] = useState("");
   const [username, setUsername] = useState("");
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [isCurrentUserTyping, setIsCurrentUserTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if user is authenticated
   const { data: userData } = useQuery({
@@ -113,6 +115,18 @@ function ChatComponent() {
     };
   }, [userData?.user?.name, username]);
 
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollRef.current) {
@@ -120,45 +134,61 @@ function ChatComponent() {
     }
   }, [messagesData, typingUsers]);
 
-  // Handle typing indicator
+  // Handle typing indicator with debouncing
   const handleTyping = useCallback(() => {
     const currentUser = userData?.user?.name ?? username ?? 'Anonymous';
     
-    // Send typing indicator
-    sendTypingMutation.mutate({
-      is_typing: true,
-      username: !isAuthenticated ? currentUser : undefined,
-    });
+    // Clear existing debounce timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
 
-    // Clear existing timeout
+    // Only send typing start event if not already typing
+    if (!isCurrentUserTyping) {
+      setIsCurrentUserTyping(true);
+      sendTypingMutation.mutate({
+        is_typing: true,
+        username: !isAuthenticated ? currentUser : undefined,
+      });
+    }
+
+    // Clear existing stop-typing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // Set timeout to stop typing indicator
-    typingTimeoutRef.current = setTimeout(() => {
+    // Debounce the stop-typing event
+    debounceTimeoutRef.current = setTimeout(() => {
+      setIsCurrentUserTyping(false);
       sendTypingMutation.mutate({
         is_typing: false,
         username: !isAuthenticated ? currentUser : undefined,
       });
-    }, 1000);
-  }, [sendTypingMutation, userData?.user?.name, username, isAuthenticated]);
+    }, 1500);
+  }, [sendTypingMutation, userData?.user?.name, username, isAuthenticated, isCurrentUserTyping]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
 
-    // Clear typing timeout
+    // Clear all typing timeouts
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = null;
     }
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+      debounceTimeoutRef.current = null;
+    }
 
-    // Send stop typing indicator
-    sendTypingMutation.mutate({
-      is_typing: false,
-      username: !isAuthenticated ? (username || 'Anonymous') : undefined,
-    });
+    // Send stop typing indicator if currently typing
+    if (isCurrentUserTyping) {
+      setIsCurrentUserTyping(false);
+      sendTypingMutation.mutate({
+        is_typing: false,
+        username: !isAuthenticated ? (username || 'Anonymous') : undefined,
+      });
+    }
 
     const payload: { message: string; username?: string } = {
       message: message.trim(),
