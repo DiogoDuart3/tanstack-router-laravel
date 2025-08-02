@@ -1,10 +1,9 @@
-import React from "react";
-import { Loader2 } from "lucide-react";
-
-export default function Loader() {
+function Loader() {
   return (
     <div className="flex h-full items-center justify-center pt-8">
-      <Loader2 className="animate-spin" />
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
     </div>
   );
 }
+
+export default Loader;

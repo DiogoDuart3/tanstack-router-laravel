@@ -225,6 +225,12 @@ export const chatApi = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  sendTyping: (data: { is_typing: boolean; username?: string }) =>
+    apiRequest<{ status: string }>('/chat/typing', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 };
 
 // Health check

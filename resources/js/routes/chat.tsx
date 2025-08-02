@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { chatApi, authApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, MessageCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { TypingIndicator } from "@/components/typing-indicator";
+import echo from "@/lib/echo";
 
 export const Route = createFileRoute("/chat")({
   component: ChatComponent,
@@ -25,8 +27,10 @@ function ChatComponent() {
   const queryClient = useQueryClient();
   const [message, setMessage] = useState("");
   const [username, setUsername] = useState("");
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if user is authenticated
   const { data: userData } = useQuery({
@@ -38,11 +42,10 @@ function ChatComponent() {
 
   const isAuthenticated = !!userData?.user;
 
-  // Fetch recent messages
+  // Fetch recent messages (no polling - using real-time updates)
   const { data: messagesData, isLoading } = useQuery({
     queryKey: ['chat', 'recent'],
     queryFn: chatApi.getRecent,
-    refetchInterval: 5000, // Poll every 5 seconds
   });
 
   // Send message mutation
@@ -50,22 +53,112 @@ function ChatComponent() {
     mutationFn: chatApi.sendMessage,
     onSuccess: () => {
       setMessage("");
-      queryClient.invalidateQueries({ queryKey: ['chat', 'recent'] });
+      // Don't need to invalidate queries - real-time updates handle this
       // Focus back on input
       setTimeout(() => inputRef.current?.focus(), 100);
     },
   });
+
+  // Send typing indicator
+  const sendTypingMutation = useMutation({
+    mutationFn: chatApi.sendTyping,
+  });
+
+  // Real-time message listener
+  useEffect(() => {
+    const channel = echo.channel('public-chat');
+    
+    channel.listen('MessageSent', (e: any) => {
+      // Add new message to the cache
+      queryClient.setQueryData(['chat', 'recent'], (oldData: any) => {
+        if (!oldData) return { messages: [e.message] };
+        return {
+          ...oldData,
+          messages: [...oldData.messages, e.message],
+        };
+      });
+    });
+
+    return () => {
+      echo.leaveChannel('public-chat');
+    };
+  }, [queryClient]);
+
+  // Real-time typing indicator listener
+  useEffect(() => {
+    const channel = echo.channel('public-chat-typing');
+    
+    channel.listen('UserTyping', (e: any) => {
+      const { user, is_typing } = e;
+      const currentUser = userData?.user?.name ?? username ?? 'Anonymous';
+      
+      // Don't show own typing indicator
+      if (user.display_name === currentUser) return;
+      
+      setTypingUsers(prev => {
+        if (is_typing) {
+          // Add user to typing list if not already there
+          return prev.includes(user.display_name) 
+            ? prev 
+            : [...prev, user.display_name];
+        } else {
+          // Remove user from typing list
+          return prev.filter(name => name !== user.display_name);
+        }
+      });
+    });
+
+    return () => {
+      echo.leaveChannel('public-chat-typing');
+    };
+  }, [userData?.user?.name, username]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messagesData]);
+  }, [messagesData, typingUsers]);
+
+  // Handle typing indicator
+  const handleTyping = useCallback(() => {
+    const currentUser = userData?.user?.name ?? username ?? 'Anonymous';
+    
+    // Send typing indicator
+    sendTypingMutation.mutate({
+      is_typing: true,
+      username: !isAuthenticated ? currentUser : undefined,
+    });
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Set timeout to stop typing indicator
+    typingTimeoutRef.current = setTimeout(() => {
+      sendTypingMutation.mutate({
+        is_typing: false,
+        username: !isAuthenticated ? currentUser : undefined,
+      });
+    }, 1000);
+  }, [sendTypingMutation, userData?.user?.name, username, isAuthenticated]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
+
+    // Clear typing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+
+    // Send stop typing indicator
+    sendTypingMutation.mutate({
+      is_typing: false,
+      username: !isAuthenticated ? (username || 'Anonymous') : undefined,
+    });
 
     const payload: { message: string; username?: string } = {
       message: message.trim(),
@@ -135,6 +228,16 @@ function ChatComponent() {
                   </div>
                 ))
               )}
+              
+              {/* Typing Indicators */}
+              {typingUsers.length > 0 && (
+                <div className="px-2">
+                  <TypingIndicator
+                    isTyping={true}
+                    userName={typingUsers.length === 1 ? typingUsers[0] : `${typingUsers.length} users`}
+                  />
+                </div>
+              )}
             </div>
           </ScrollArea>
 
@@ -159,7 +262,12 @@ function ChatComponent() {
                 type="text"
                 placeholder="Type your message..."
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={(e) => {
+                  setMessage(e.target.value);
+                  if (e.target.value.trim()) {
+                    handleTyping();
+                  }
+                }}
                 maxLength={1000}
                 disabled={sendMessageMutation.isPending}
                 className="flex-1"

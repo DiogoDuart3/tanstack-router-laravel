@@ -1,0 +1,23 @@
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
+
+// Make Pusher globally available for Laravel Echo
+(window as any).Pusher = Pusher;
+
+const echo = new Echo({
+  broadcaster: 'reverb',
+  key: import.meta.env.VITE_REVERB_APP_KEY,
+  wsHost: import.meta.env.VITE_REVERB_HOST,
+  wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
+  wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
+  forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+  enabledTransports: ['ws', 'wss'],
+  // CSRF token for authentication
+  auth: {
+    headers: {
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+    },
+  },
+});
+
+export default echo;

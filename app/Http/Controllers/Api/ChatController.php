@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\MessageSent;
+use App\Events\UserTyping;
 use App\Http\Controllers\Controller;
 use App\Models\Chat;
 use Illuminate\Http\Request;
@@ -77,6 +79,9 @@ class ChatController extends Controller
 
         $chat->load('user:id,name');
 
+        // Broadcast the message to all connected clients
+        broadcast(new MessageSent($chat));
+
         return response()->json([
             'message' => [
                 'id' => $chat->id,
@@ -111,5 +116,22 @@ class ChatController extends Controller
         return response()->json([
             'messages' => $formattedMessages,
         ]);
+    }
+
+    public function typing(Request $request): JsonResponse
+    {
+        $request->validate([
+            'is_typing' => 'required|boolean',
+            'username' => 'nullable|string|max:50',
+        ]);
+
+        $user = Auth::user();
+        $displayName = $user?->name ?? ($request->input('username') ?: 'Anonymous');
+        $isTyping = $request->boolean('is_typing');
+
+        // Broadcast typing indicator
+        broadcast(new UserTyping($displayName, $isTyping));
+
+        return response()->json(['status' => 'ok']);
     }
 }

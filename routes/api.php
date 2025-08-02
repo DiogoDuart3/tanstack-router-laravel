@@ -26,6 +26,7 @@ Route::prefix('chat')->group(function () {
     Route::get('/', [ChatController::class, 'index']);
     Route::get('recent', [ChatController::class, 'recent']);
     Route::post('/', [ChatController::class, 'store']);
+    Route::post('typing', [ChatController::class, 'typing']);
 });
 
 // Protected routes

@@ -7,13 +7,20 @@ import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+    server: {
+        host: 'localhost',
+        hmr: {
+            host: 'localhost',
+        },
+    },
     plugins: [
-        react({
-            jsxImportSource: 'react',
-        }),
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             refresh: true,
+        }),
+        react({
+            include: "**/*.{jsx,tsx}",
+            jsxImportSource: 'react',
         }),
         tailwindcss(),
         tanstackRouter({
@@ -47,7 +54,6 @@ export default defineConfig({
     ],
     esbuild: {
         jsx: 'automatic',
-        jsxImportSource: 'react',
     },
     resolve: {
         alias: {

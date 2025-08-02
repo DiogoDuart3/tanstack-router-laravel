@@ -19,7 +19,7 @@ import { toast } from "sonner";
 export default function UserMenu() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
+
   const userQuery = useQuery({
     queryKey: ['user'],
     queryFn: authApi.getUser,
@@ -78,8 +78,8 @@ export default function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           size="sm"
           className="text-sm md:text-base max-w-[120px] md:max-w-none truncate flex items-center gap-2"
         >
