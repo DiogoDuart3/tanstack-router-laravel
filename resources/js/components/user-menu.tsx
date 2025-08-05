@@ -12,8 +12,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { Link } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { User, Settings, LogOut } from "lucide-react";
+import { User, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
 export default function UserMenu() {
