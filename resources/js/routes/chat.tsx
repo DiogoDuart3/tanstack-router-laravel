@@ -127,10 +127,14 @@ function ChatComponent() {
     };
   }, []);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive or typing indicators change
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      const scrollArea = scrollRef.current;
+      // Use setTimeout to ensure DOM has updated with new content
+      setTimeout(() => {
+        scrollArea.scrollTop = scrollArea.scrollHeight;
+      }, 0);
     }
   }, [messagesData, typingUsers]);
 

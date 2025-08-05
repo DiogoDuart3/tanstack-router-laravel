@@ -48,7 +48,7 @@ export default function PublicChat({ className = "" }: PublicChatProps) {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, typingUsers]);
 
   useEffect(() => {
     const connectWebSocket = async () => {
