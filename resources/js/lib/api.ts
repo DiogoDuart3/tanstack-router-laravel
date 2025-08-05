@@ -8,7 +8,7 @@ async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = localStorage.getItem('auth_token');
-  
+
   const config: RequestInit = {
     ...options,
     headers: {
@@ -36,7 +36,7 @@ async function apiRequest<T>(
       window.location.href = '/login';
       throw new Error('Unauthorized');
     }
-    
+
     const errorData = await response.json().catch(() => ({ message: 'An error occurred' }));
     throw new Error(errorData.message || `HTTP ${response.status}`);
   }
@@ -50,9 +50,9 @@ async function apiRequestFormData<T>(
   data: Record<string, any>
 ): Promise<T> {
   const token = localStorage.getItem('auth_token');
-  
+
   const formData = new FormData();
-  
+
   // Add regular form fields
   Object.keys(data).forEach(key => {
     if (key === 'images') {
@@ -103,7 +103,7 @@ async function apiRequestFormData<T>(
       window.location.href = '/auth/login';
       throw new Error('Unauthorized');
     }
-    
+
     const errorData = await response.json().catch(() => ({ message: 'An error occurred' }));
     throw new Error(errorData.message || `HTTP ${response.status}`);
   }
@@ -257,7 +257,7 @@ export const adminChatApi = {
 // Health check
 export const healthApi = {
   check: () =>
-    apiRequest<{ status: string; timestamp: string }>('/health'),
+    apiRequest<{ status: string; timestamp: string; request_time_ms: number }>('/health'),
 };
 
 export const queryClient = new QueryClient({

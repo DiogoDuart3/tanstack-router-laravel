@@ -18,8 +18,20 @@ Route::prefix('auth')->group(function () {
 });
 
 // Health check
-Route::get('health', function () {
-    return response()->json(['status' => 'ok', 'timestamp' => now()]);
+Route::get('health', function (Request $request) {
+    $startTime = microtime(true);
+
+    // Simulate some processing time for more accurate measurement
+    usleep(1000); // 1ms delay
+
+    $endTime = microtime(true);
+    $requestTime = ($endTime - $startTime) * 1000; // Convert to milliseconds
+
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now(),
+        'request_time_ms' => round($requestTime, 2)
+    ]);
 });
 
 // Public chat routes (accessible to everyone)
@@ -35,7 +47,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index']);
     Route::get('profile', [UserController::class, 'profile']);
     Route::put('profile', [UserController::class, 'updateProfile']);
-    
+
     // Todo routes for offline functionality
     Route::prefix('todos')->group(function () {
         Route::get('/', [TodoController::class, 'index']);

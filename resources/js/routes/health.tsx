@@ -27,18 +27,18 @@ function HealthComponent() {
             <div className="flex items-center gap-2">
               <div
                 className={`h-3 w-3 rounded-full ${
-                  healthQuery.isLoading 
-                    ? "bg-yellow-500" 
-                    : healthQuery.data 
-                      ? "bg-green-500" 
+                  healthQuery.isLoading
+                    ? "bg-yellow-500"
+                    : healthQuery.data
+                      ? "bg-green-500"
                       : "bg-red-500"
                 }`}
               />
               <span className="text-sm">
-                {healthQuery.isLoading 
-                  ? "Checking..." 
-                  : healthQuery.data 
-                    ? "Online" 
+                {healthQuery.isLoading
+                  ? "Checking..."
+                  : healthQuery.data
+                    ? "Online"
                     : "Offline"}
               </span>
             </div>
@@ -53,6 +53,10 @@ function HealthComponent() {
               <div className="flex justify-between">
                 <span>Timestamp:</span>
                 <span className="font-mono">{new Date(healthQuery.data.timestamp).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Request Time:</span>
+                <span className="font-mono">{healthQuery.data.request_time_ms}ms</span>
               </div>
             </div>
           )}
@@ -76,7 +80,7 @@ function HealthComponent() {
             <div className="flex justify-between">
               <span>Connection:</span>
               <span className="font-mono">
-                {(navigator as any).connection?.effectiveType || 'Unknown'}
+                {(navigator as Navigator & { connection?: { effectiveType: string } }).connection?.effectiveType || 'Unknown'}
               </span>
             </div>
             <div className="flex justify-between">
@@ -92,16 +96,18 @@ function HealthComponent() {
           <h2 className="text-lg font-semibold mb-4">Performance</h2>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span>Page Load Time:</span>
+              <span>API Response Time:</span>
               <span className="font-mono">
-                {Math.round(performance.now())}ms
+                {healthQuery.data?.request_time_ms
+                  ? `${healthQuery.data.request_time_ms}ms`
+                  : 'N/A'}
               </span>
             </div>
             <div className="flex justify-between">
               <span>Memory Usage:</span>
               <span className="font-mono">
-                {(performance as any).memory 
-                  ? `${Math.round((performance as any).memory.usedJSHeapSize / 1024 / 1024)}MB`
+                {(performance as Performance & { memory?: { usedJSHeapSize: number } }).memory
+                  ? `${Math.round((performance as Performance & { memory?: { usedJSHeapSize: number } }).memory!.usedJSHeapSize / 1024 / 1024)}MB`
                   : 'N/A'}
               </span>
             </div>

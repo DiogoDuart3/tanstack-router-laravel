@@ -18,10 +18,7 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             refresh: true,
         }),
-        react({
-            include: "**/*.{jsx,tsx}",
-            jsxImportSource: 'react',
-        }),
+        react(),
         tailwindcss(),
         tanstackRouter({
             routesDirectory: './resources/js/routes',
@@ -52,9 +49,7 @@ export default defineConfig({
             },
         }),
     ],
-    esbuild: {
-        jsx: 'automatic',
-    },
+
     resolve: {
         alias: {
             '@': resolve(__dirname, './resources/js'),
