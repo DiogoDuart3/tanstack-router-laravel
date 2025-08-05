@@ -174,7 +174,7 @@ function AdminChatComponent() {
       sendTypingMutation.mutate({
         is_typing: false,
       });
-    }, 1500);
+    }, 800);
   }, [sendTypingMutation, isCurrentUserTyping]);
 
   const handleSubmit = (e: React.FormEvent) => {

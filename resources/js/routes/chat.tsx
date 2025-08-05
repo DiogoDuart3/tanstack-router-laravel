@@ -171,7 +171,7 @@ function ChatComponent() {
         is_typing: false,
         username: !isAuthenticated ? currentUser : undefined,
       });
-    }, 1500);
+    }, 800);
   }, [sendTypingMutation, userData?.user?.name, username, isAuthenticated, isCurrentUserTyping]);
 
   const handleSubmit = (e: React.FormEvent) => {
