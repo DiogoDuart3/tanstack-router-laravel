@@ -130,11 +130,14 @@ function ChatComponent() {
   // Auto-scroll to bottom when new messages arrive or typing indicators change
   useEffect(() => {
     if (scrollRef.current) {
-      const scrollArea = scrollRef.current;
-      // Use setTimeout to ensure DOM has updated with new content
-      setTimeout(() => {
-        scrollArea.scrollTop = scrollArea.scrollHeight;
-      }, 0);
+      // Find the viewport element inside the ScrollArea
+      const viewport = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (viewport) {
+        // Use setTimeout to ensure DOM has updated with new content
+        setTimeout(() => {
+          viewport.scrollTop = viewport.scrollHeight;
+        }, 0);
+      }
     }
   }, [messagesData, typingUsers]);
 
