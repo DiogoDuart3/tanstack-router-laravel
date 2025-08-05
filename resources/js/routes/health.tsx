@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { healthApi } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/health")({
   component: HealthComponent,
@@ -41,6 +43,16 @@ function HealthComponent() {
                     ? "Online"
                     : "Offline"}
               </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => healthQuery.refetch()}
+                disabled={healthQuery.isLoading}
+                className="ml-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${healthQuery.isLoading ? 'animate-spin' : ''}`} />
+                <span className="ml-1">Refresh</span>
+              </Button>
             </div>
           </div>
 
