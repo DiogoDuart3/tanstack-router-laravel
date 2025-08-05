@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Laravel Backend
 - `composer dev` - Start development server with queue worker, logs, and Vite in parallel
-- `composer dev:ssr` - Development with server-side rendering enabled
 - `composer test` - Run PHP tests (clears config first)
 - `php artisan test` - Run Pest tests directly
+- `php artisan test --filter=FeatureName` - Run specific test group
 - `php artisan pail` - View application logs in real-time
 - `php artisan serve` - Start Laravel development server only
 - `php artisan queue:listen --tries=1` - Run queue worker
@@ -24,51 +24,67 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Testing
 - `composer test` - Run all PHP tests using Pest
-- `php artisan test --filter=FeatureName` - Run specific test group
 - Tests are organized in `tests/Feature/` and `tests/Unit/`
 
 ## Architecture Overview
 
-This is a Laravel + React application using Inertia.js as the bridge between backend and frontend.
+This is a Laravel + React application using **TanStack Router** for client-side routing and Laravel as an API backend.
 
 ### Backend Structure
 - **Laravel 12** with PHP 8.2+
-- **Inertia.js** for SPA-like experience without API
+- **Laravel Sanctum** for API authentication
+- **Laravel Reverb** for WebSocket/real-time features
 - **Pest** for testing framework
 - **SQLite** database (database.sqlite)
 - Authentication system with email verification
 - Queue system for background jobs
+- Real-time chat system with admin panel
 
 ### Frontend Structure
 - **React 19** with TypeScript
-- **Inertia.js React adapter** for page components
+- **TanStack Router** for file-based routing with type safety
+- **TanStack Query** for server state management
 - **Tailwind CSS v4** with custom configuration
 - **Radix UI** components for accessible UI primitives
 - **Vite** for build tooling with Laravel integration
+- **PWA** support with service workers
 - **ESLint + Prettier** for code quality
 
 ### Key Directories
-- `app/Http/Controllers/` - Laravel controllers
-- `resources/js/` - React components, pages, and TypeScript code
-- `resources/js/pages/` - Inertia page components
+- `app/Http/Controllers/Api/` - API controllers for frontend
+- `app/Http/Controllers/Auth/` - Authentication controllers
+- `app/Models/` - Eloquent models (User, Todo, Chat, AdminChat)
+- `resources/js/routes/` - TanStack Router route files
 - `resources/js/components/` - Reusable React components
 - `resources/js/layouts/` - Layout components
-- `routes/` - Laravel route definitions
+- `resources/js/hooks/` - Custom React hooks
+- `resources/js/lib/` - Utility functions and API client
+- `routes/api.php` - API routes
+- `routes/web.php` - Catches all routes and serves React SPA
 - `tests/` - Pest test files
 
 ### Important Files
-- `vite.config.ts` - Vite configuration with Laravel plugin
+- `vite.config.ts` - Vite configuration with Laravel plugin, TanStack Router, and PWA
+- `resources/js/routeTree.gen.ts` - Auto-generated TanStack Router route tree
+- `resources/js/app.tsx` - Main React application entry point
 - `composer.json` - Defines useful development scripts
 - `package.json` - Frontend dependencies and scripts
 - `phpunit.xml` - Test configuration
 - `tests/Pest.php` - Pest test configuration
 
 ### Development Workflow
-1. Use `composer dev` to start all services simultaneously
-2. Laravel serves API/SSR on one port, Vite serves assets on another
-3. Inertia.js handles client-side navigation
-4. Tests use Pest framework with SQLite in-memory database
-5. Code formatting handled by Prettier, linting by ESLint
+1. Use `composer dev` to start all services simultaneously (Laravel, Vite, queue worker, logs)
+2. Laravel serves as API backend on port 8000
+3. Vite serves frontend assets with HMR
+4. TanStack Router handles client-side navigation with type safety
+5. TanStack Query manages server state and caching
+6. Tests use Pest framework with SQLite in-memory database
+7. Code formatting handled by Prettier, linting by ESLint
 
-### Imported App
-There's an `imported_app/` directory containing what appears to be a separate React application with TanStack Router. This seems to be imported from another project and may be intended for integration.
+### Key Features
+- **Real-time Chat**: WebSocket-based chat system with typing indicators
+- **Admin Panel**: Dedicated admin chat interface
+- **PWA Support**: Installable as native app with offline capabilities
+- **Todo System**: CRUD operations with image uploads
+- **Authentication**: Complete auth flow with email verification
+- **Theme System**: Dark/light mode with system preference detection

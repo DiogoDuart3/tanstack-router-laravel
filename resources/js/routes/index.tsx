@@ -54,7 +54,7 @@ function HomeComponent() {
     ],
     backend: [
       { name: "Laravel 12", description: "Modern PHP framework", icon: Code2 },
-      { name: "Inertia.js", description: "SPA without APIs", icon: Zap },
+      { name: "Laravel Sanctum", description: "API authentication system", icon: Shield },
       { name: "Laravel Reverb", description: "Real-time WebSocket server", icon: MessageCircle },
       { name: "SQLite", description: "Lightweight database", icon: Database },
     ],
@@ -70,9 +70,9 @@ function HomeComponent() {
     "Type-safe end-to-end development",
     "File-based routing with full type safety",
     "Real-time chat with WebSocket support",
-    "Offline-first todos with sync",
+    "RESTful API architecture with Laravel",
     "Progressive Web App (PWA) support",
-    "Modern authentication system",
+    "Modern authentication with Sanctum",
     "Database migrations with Laravel",
     "TailwindCSS for rapid UI development",
     "Radix UI component library",
@@ -91,8 +91,8 @@ function HomeComponent() {
               Laravel TanStack
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-              A modern, full-stack TypeScript starter kit that combines the best technologies for building
-              scalable web applications with type safety, performance, and developer experience.
+              A modern, full-stack TypeScript starter kit combining Laravel API backend with TanStack Router frontend
+              for building scalable web applications with type safety, performance, and developer experience.
             </p>
           </div>
 
@@ -155,7 +155,8 @@ function HomeComponent() {
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold mb-4">Technology Stack</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Built with modern tools and frameworks to ensure type safety, performance, and excellent developer experience.
+              Built with modern tools and frameworks to ensure type safety, performance, and excellent developer experience
+              using Laravel API backend with TanStack Router frontend.
             </p>
           </div>
 

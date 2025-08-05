@@ -24,13 +24,13 @@ Built with modern best practices and developer experience in mind.
 End-to-end type safety from database to UI with TypeScript, TanStack Router, and Laravel's strong typing.
 
 ### ⚡ **Performance** 
-Built on Laravel's proven architecture with React 19's concurrent features for optimal performance.
+Built on Laravel's proven API architecture with React 19's concurrent features and TanStack Query for optimal performance.
 
 ### 📱 **PWA Ready**
 Progressive Web App support with offline capabilities and native app-like experience.
 
 ### 🎯 **Developer Experience**
-Hot reload, type checking, and modern tooling for the best development experience.
+Hot reload, type checking, file-based routing, and modern tooling for the best development experience.
 
 ---
 
@@ -46,10 +46,10 @@ Hot reload, type checking, and modern tooling for the best development experienc
 
 ### **Backend Power**
 - 🚀 **Laravel 12** - Modern PHP framework with latest features and performance improvements
-- 🔗 **Inertia.js** - Build SPAs without the complexity of separate APIs
+- 🔗 **Laravel Sanctum** - Simple, powerful API authentication system
 - ⚡ **Laravel Reverb** - Real-time WebSocket server for live features
 - 🗃️ **SQLite** - Lightweight, fast database perfect for development and small applications
-- 🔐 **Laravel Sanctum** - Simple, powerful authentication system
+- 🏗️ **RESTful API** - Clean API architecture with full type safety
 
 ### **Real-time Features**
 - 💬 **Live Chat System** - Real-time messaging with typing indicators
@@ -111,9 +111,8 @@ Hot reload, type checking, and modern tooling for the best development experienc
 | Technology | Version | Purpose |
 |------------|---------|---------|
 | [Laravel](https://laravel.com/) | 12.0 | Modern PHP framework |
-| [Inertia.js](https://inertiajs.com/) | Latest | SPA without separate APIs |
-| [Laravel Reverb](https://reverb.laravel.com/) | Latest | Real-time WebSocket server |
 | [Laravel Sanctum](https://laravel.com/docs/sanctum) | Latest | API authentication |
+| [Laravel Reverb](https://reverb.laravel.com/) | Latest | Real-time WebSocket server |
 | [Pest PHP](https://pestphp.com/) | Latest | Modern testing framework |
 | [SQLite](https://www.sqlite.org/) | Latest | Lightweight database |
 
@@ -135,16 +134,20 @@ Hot reload, type checking, and modern tooling for the best development experienc
 
 ```
 ├── app/                    # Laravel application
-│   ├── Http/Controllers/   # API and web controllers
+│   ├── Http/Controllers/   # API controllers
+│   │   ├── Api/           # Frontend API endpoints
+│   │   └── Auth/          # Authentication controllers
 │   ├── Models/            # Eloquent models
 │   └── Policies/          # Authorization policies
 ├── resources/js/          # React frontend
 │   ├── components/        # Reusable components
-│   ├── pages/            # Inertia page components
+│   ├── routes/           # TanStack Router file-based routes
 │   ├── layouts/          # Layout components
-│   ├── routes/           # TanStack Router routes
-│   └── hooks/            # Custom React hooks
+│   ├── hooks/            # Custom React hooks
+│   └── lib/              # Utilities and API client
 ├── routes/               # Laravel routes
+│   ├── api.php           # API routes
+│   └── web.php           # SPA catch-all route
 ├── tests/               # Pest tests
 └── database/            # Migrations and seeders
 ```
@@ -394,11 +397,11 @@ export APP_DEBUG=false
 - 🔗 **Code Splitting** - Automatic route-based code splitting
 - 🎣 **Data Loading** - Built-in loader and search param management
 
-### **Why Inertia.js?**
-- 🚫 **No API Complexity** - Direct Laravel → React data flow
-- 🔄 **SPA Experience** - Client-side navigation with server-side rendering
-- 🛡️ **Security** - CSRF protection and server-side validation
-- 📦 **Simpler Architecture** - One codebase, no API versioning
+### **Why Laravel API Architecture?**
+- 🔄 **Clean Separation** - Clear boundaries between frontend and backend
+- 🛡️ **Security** - Laravel Sanctum for secure API authentication
+- 📦 **Scalability** - Easy to scale frontend and backend independently
+- 🎯 **Flexibility** - API can serve multiple clients (web, mobile, etc.)
 
 ### **Why Laravel Reverb?**
 - ⚡ **Native Integration** - Built specifically for Laravel
