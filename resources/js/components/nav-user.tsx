@@ -4,14 +4,29 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/c
 import { UserInfo } from '@/components/user-info';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { type SharedData } from '@/types';
-import { usePage } from '@inertiajs/react';
+// import { type SharedData } from '@/types'; // No longer needed with TanStack Router
+// TODO: Replace with proper auth context or state management
+// import { usePage } from '@inertiajs/react';
 import { ChevronsUpDown } from 'lucide-react';
 
 export function NavUser() {
-    const { auth } = usePage<SharedData>().props;
+    // TODO: Replace with proper auth context or state management
+    // const { auth } = usePage<SharedData>().props;
     const { state } = useSidebar();
     const isMobile = useIsMobile();
+    
+    // Temporary mock data - replace with actual auth state
+    const auth = {
+        user: {
+            id: 1,
+            name: 'User',
+            email: 'user@example.com',
+            avatar: '',
+            email_verified_at: null,
+            created_at: '2024-01-01T00:00:00.000000Z',
+            updated_at: '2024-01-01T00:00:00.000000Z',
+        }
+    };
 
     return (
         <SidebarMenu>

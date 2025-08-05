@@ -3,7 +3,7 @@ import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSep
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { type User } from '@/types';
-import { Link, router } from '@inertiajs/react';
+import { Link, useRouter } from '@tanstack/react-router';
 import { LogOut, Settings } from 'lucide-react';
 
 interface UserMenuContentProps {
@@ -12,10 +12,12 @@ interface UserMenuContentProps {
 
 export function UserMenuContent({ user }: UserMenuContentProps) {
     const cleanup = useMobileNavigation();
+    const router = useRouter();
 
     const handleLogout = () => {
         cleanup();
-        router.flushAll();
+        // TODO: Replace with actual logout API call and navigation
+        // router.navigate({ to: '/auth/login' });
     };
 
     return (
@@ -28,7 +30,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
-                    <Link className="block w-full" href={route('profile.edit')} as="button" prefetch onClick={cleanup}>
+                    <Link className="block w-full" to="/profile" onClick={cleanup}>
                         <Settings className="mr-2" />
                         Settings
                     </Link>
@@ -36,7 +38,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-                <Link className="block w-full" method="post" href={route('logout')} as="button" onClick={handleLogout}>
+                <Link className="block w-full" to="/auth/login" onClick={handleLogout}>
                     <LogOut className="mr-2" />
                     Log out
                 </Link>
