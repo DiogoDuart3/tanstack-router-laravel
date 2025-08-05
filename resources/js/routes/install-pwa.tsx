@@ -1,3 +1,4 @@
+
 import { createFileRoute } from "@tanstack/react-router";
 import PWAInstallPrompt from "@/components/pwa-install-prompt";
 
@@ -15,7 +16,7 @@ function InstallPWAComponent() {
 
       <div className="space-y-6">
         <PWAInstallPrompt />
-        
+
         <div className="bg-card rounded-lg p-6">
           <h2 className="text-lg font-semibold mb-4">Why install this app?</h2>
           <ul className="space-y-2 text-muted-foreground">

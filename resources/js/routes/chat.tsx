@@ -1,3 +1,4 @@
+
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -69,7 +70,7 @@ function ChatComponent() {
   // Real-time message listener
   useEffect(() => {
     const channel = echo.channel('public-chat');
-    
+
     channel.listen('MessageSent', (e: any) => {
       // Add new message to the cache
       queryClient.setQueryData(['chat', 'recent'], (oldData: any) => {
@@ -89,19 +90,19 @@ function ChatComponent() {
   // Real-time typing indicator listener
   useEffect(() => {
     const channel = echo.channel('public-chat-typing');
-    
+
     channel.listen('UserTyping', (e: any) => {
       const { user, is_typing } = e;
       const currentUser = userData?.user?.name ?? username ?? 'Anonymous';
-      
+
       // Don't show own typing indicator
       if (user.display_name === currentUser) return;
-      
+
       setTypingUsers(prev => {
         if (is_typing) {
           // Add user to typing list if not already there
-          return prev.includes(user.display_name) 
-            ? prev 
+          return prev.includes(user.display_name)
+            ? prev
             : [...prev, user.display_name];
         } else {
           // Remove user from typing list
@@ -144,7 +145,7 @@ function ChatComponent() {
   // Handle typing indicator with debouncing
   const handleTyping = useCallback(() => {
     const currentUser = userData?.user?.name ?? username ?? 'Anonymous';
-    
+
     // Clear existing debounce timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
@@ -219,8 +220,8 @@ function ChatComponent() {
             Public Chat
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            {isAuthenticated 
-              ? `Chatting as ${userData?.user?.name}` 
+            {isAuthenticated
+              ? `Chatting as ${userData?.user?.name}`
               : "Join the conversation! You can chat anonymously or sign in."}
           </p>
         </CardHeader>
@@ -265,7 +266,7 @@ function ChatComponent() {
                   </div>
                 ))
               )}
-              
+
               {/* Typing Indicators */}
               {typingUsers.length > 0 && (
                 <div className="px-2">
@@ -292,7 +293,7 @@ function ChatComponent() {
                 />
               </div>
             )}
-            
+
             <div className="flex gap-2">
               <Input
                 ref={inputRef}

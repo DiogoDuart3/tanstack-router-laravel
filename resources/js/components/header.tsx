@@ -1,3 +1,4 @@
+
 import { Link } from "@tanstack/react-router";
 import { authApi } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
@@ -83,8 +84,8 @@ export default function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
         {/* Logo/Brand */}
         <div className="flex items-center">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="flex items-center space-x-2 text-xl font-bold text-primary hover:text-primary/80 transition-colors"
           >
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
@@ -98,8 +99,8 @@ export default function Header() {
         <nav className="hidden lg:flex items-center space-x-1">
           {links.map(({ to, label, icon: Icon }) => {
             return (
-              <Link 
-                key={to} 
+              <Link
+                key={to}
                 to={to}
                 className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-all duration-200 whitespace-nowrap"
               >
@@ -114,7 +115,7 @@ export default function Header() {
         <div className="flex items-center space-x-2">
           <ModeToggle />
           <UserMenu />
-          
+
           {/* Mobile/Tablet Menu Button */}
           <Button
             variant="ghost"
@@ -137,11 +138,11 @@ export default function Header() {
       {isMobileMenuOpen && (
         <>
           {/* Backdrop */}
-          <div 
+          <div
             className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
             onClick={closeMobileMenu}
           />
-          
+
           {/* Menu */}
           <div className="lg:hidden absolute top-full left-0 right-0 bg-background border-b border-border shadow-lg z-50 max-h-[calc(100vh-4rem)] overflow-y-auto">
             <nav className="flex flex-col py-2">

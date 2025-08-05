@@ -1,3 +1,4 @@
+
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ComponentProps } from 'react';

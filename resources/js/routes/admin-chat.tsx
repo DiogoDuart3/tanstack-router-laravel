@@ -1,3 +1,4 @@
+
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -77,7 +78,7 @@ function AdminChatComponent() {
     if (!isAuthenticated || !isAdmin) return;
 
     const channel = echo.channel('admin-chat');
-    
+
     channel.listen('AdminMessageSent', (e: any) => {
       queryClient.setQueryData(['admin-chat', 'recent'], (oldData: any) => {
         if (!oldData) return { messages: [e.message] };
@@ -98,18 +99,18 @@ function AdminChatComponent() {
     if (!isAuthenticated || !isAdmin) return;
 
     const channel = echo.channel('admin-chat-typing');
-    
+
     channel.listen('AdminUserTyping', (e: any) => {
       const { user, is_typing } = e;
       const currentUser = userData?.user?.name;
-      
+
       // Don't show own typing indicator
       if (user.display_name === currentUser) return;
-      
+
       setTypingUsers(prev => {
         if (is_typing) {
-          return prev.includes(user.display_name) 
-            ? prev 
+          return prev.includes(user.display_name)
+            ? prev
             : [...prev, user.display_name];
         } else {
           return prev.filter(name => name !== user.display_name);
@@ -283,7 +284,7 @@ function AdminChatComponent() {
                   </div>
                 ))
               )}
-              
+
               {/* Typing Indicators */}
               {typingUsers.length > 0 && (
                 <div className="px-2">
@@ -297,7 +298,7 @@ function AdminChatComponent() {
           </ScrollArea>
 
           {/* Message Input */}
-          <form onSubmit={handleSubmit} className="flex-shrink-0">            
+          <form onSubmit={handleSubmit} className="flex-shrink-0">
             <div className="flex gap-2">
               <Input
                 ref={inputRef}

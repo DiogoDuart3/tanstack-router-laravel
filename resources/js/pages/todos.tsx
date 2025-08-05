@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -40,7 +41,7 @@ export default function Todos({ todos }: TodosProps) {
     if (file) {
       setSelectedImage(file);
       setData('image', file);
-      
+
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target?.result as string);
@@ -62,7 +63,7 @@ export default function Todos({ todos }: TodosProps) {
     e.preventDefault();
     if (newTodoText.trim()) {
       setData('text', newTodoText.trim());
-      
+
       post('/api/todos', {
         onSuccess: () => {
           setNewTodoText("");
@@ -115,7 +116,7 @@ export default function Todos({ todos }: TodosProps) {
                   )}
                 </Button>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="image-upload" className="text-sm font-medium">
                   Attach Image (optional)
@@ -140,7 +141,7 @@ export default function Todos({ todos }: TodosProps) {
                     <Upload className="h-4 w-4" />
                   </Button>
                 </div>
-                
+
                 {imagePreview && (
                   <div className="relative">
                     <img

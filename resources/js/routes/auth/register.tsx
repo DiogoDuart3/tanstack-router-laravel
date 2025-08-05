@@ -1,3 +1,4 @@
+
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { authApi } from "@/lib/api";
 import { useMutation } from "@tanstack/react-query";
@@ -34,7 +35,7 @@ function RegisterComponent() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.password_confirmation) {
       toast.error('Passwords do not match');
       return;
@@ -96,9 +97,9 @@ function RegisterComponent() {
           />
         </div>
 
-        <Button 
-          type="submit" 
-          className="w-full" 
+        <Button
+          type="submit"
+          className="w-full"
           disabled={registerMutation.isPending}
         >
           {registerMutation.isPending ? 'Creating account...' : 'Sign Up'}

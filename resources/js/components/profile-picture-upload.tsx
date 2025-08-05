@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "./ui/input";
@@ -62,7 +63,7 @@ export default function ProfilePictureUpload({
         contentType: file.type,
         fileData: base64Data,
       });
-      
+
       if (result.success) {
         onUploadSuccess(result.imageUrl);
         toast.success('Profile picture updated successfully!');
@@ -155,7 +156,7 @@ export default function ProfilePictureUpload({
             onChange={handleFileInput}
             className="hidden"
           />
-          
+
           <div className="space-y-2">
             <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
             <div>
@@ -196,4 +197,4 @@ export default function ProfilePictureUpload({
       </CardContent>
     </Card>
   );
-} 
+}

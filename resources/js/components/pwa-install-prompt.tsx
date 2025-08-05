@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, X, CheckCircle } from "lucide-react";
@@ -18,7 +19,7 @@ export default function PWAInstallPrompt({ onDismiss, variant = "banner" }: PWAI
   useEffect(() => {
     // Check if app is already installed
     setIsStandalone(window.matchMedia('(display-mode: standalone)').matches);
-    
+
     // Check if app is installed via other methods
     if ('getInstalledRelatedApps' in navigator) {
       (navigator as any).getInstalledRelatedApps().then((relatedApps: any[]) => {
@@ -49,7 +50,7 @@ export default function PWAInstallPrompt({ onDismiss, variant = "banner" }: PWAI
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    
+
     if (outcome === 'accepted') {
       setIsInstalled(true);
       setDeferredPrompt(null);
@@ -60,7 +61,7 @@ export default function PWAInstallPrompt({ onDismiss, variant = "banner" }: PWAI
   const showInstallInstructions = () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/.test(navigator.userAgent);
-    
+
     if (isIOS) {
       alert('To install: Tap the Share button and select "Add to Home Screen"');
     } else if (isAndroid) {
@@ -143,4 +144,4 @@ export default function PWAInstallPrompt({ onDismiss, variant = "banner" }: PWAI
       </div>
     </div>
   );
-} 
+}

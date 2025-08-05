@@ -1,3 +1,4 @@
+
 import { createFileRoute } from "@tanstack/react-router";
 import { healthApi } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
@@ -19,7 +20,7 @@ function HealthComponent() {
     <div className="container mx-auto max-w-2xl px-4 py-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">System Health</h1>
-        <p className="text-muted-foreground">Check the status of the application</p>
+        <p className="text-muted-foreground">Check the status of the application 123</p>
       </div>
 
       <div className="space-y-6">

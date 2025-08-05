@@ -1,5 +1,5 @@
+
 import Header from "@/components/header";
-import Loader from "@/components/loader";
 import { OfflineIndicator } from "@/components/offline-indicator";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -50,7 +50,11 @@ function RootComponent() {
         <OfflineIndicator />
         <div className="grid grid-rows-[auto_1fr] h-svh">
           <Header />
-          {isFetching ? <Loader /> : <Outlet />}
+          {isFetching ? (
+            <div className="flex h-full items-center justify-center pt-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
+            </div>
+          ) : <Outlet />}
         </div>
         <Toaster richColors />
       </ThemeProvider>

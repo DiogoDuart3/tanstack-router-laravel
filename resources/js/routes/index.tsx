@@ -1,3 +1,4 @@
+
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { healthApi, authApi } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
@@ -5,14 +6,14 @@ import PWAInstallPrompt from "@/components/pwa-install-prompt";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Code2, 
-  Database, 
-  Globe, 
-  Smartphone, 
-  Zap, 
-  Shield, 
-  MessageCircle, 
+import {
+  Code2,
+  Database,
+  Globe,
+  Smartphone,
+  Zap,
+  Shield,
+  MessageCircle,
   CheckCircle2,
   Palette,
   TestTube,
@@ -68,7 +69,7 @@ function HomeComponent() {
   const keyFeatures = [
     "Type-safe end-to-end development",
     "File-based routing with full type safety",
-    "Real-time chat with WebSocket support", 
+    "Real-time chat with WebSocket support",
     "Offline-first todos with sync",
     "Progressive Web App (PWA) support",
     "Modern authentication system",
@@ -82,7 +83,7 @@ function HomeComponent() {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <div className="container mx-auto max-w-6xl px-4 py-8">
         <PWAInstallPrompt />
-        
+
         {/* Hero Section */}
         <div className="text-center mb-16 space-y-6">
           <div className="space-y-4">
@@ -90,11 +91,11 @@ function HomeComponent() {
               Laravel TanStack
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-              A modern, full-stack TypeScript starter kit that combines the best technologies for building 
+              A modern, full-stack TypeScript starter kit that combines the best technologies for building
               scalable web applications with type safety, performance, and developer experience.
             </p>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
               <a href="https://github.com/your-username/tanstack-router-laravel" target="_blank" rel="noopener noreferrer">

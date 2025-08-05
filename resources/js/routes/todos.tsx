@@ -1,3 +1,4 @@
+
 import { createFileRoute } from "@tanstack/react-router";
 import { todosApi } from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -193,7 +194,7 @@ function TodosComponent() {
                   />
                   <label className="ml-2 text-sm">Completed</label>
                 </div>
-                
+
                 {/* Existing Images */}
                 {todo.image_urls && todo.image_urls.length > 0 && (
                   <div>
@@ -205,7 +206,7 @@ function TodosComponent() {
                     />
                   </div>
                 )}
-                
+
                 {/* Add New Images */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Add New Images</label>
@@ -215,7 +216,7 @@ function TodosComponent() {
                     maxImages={5 - (todo.image_urls?.length || 0) + imagesToRemove.length}
                   />
                 </div>
-                
+
                 <div className="flex gap-2">
                   <Button type="submit" disabled={updateMutation.isPending}>
                     {updateMutation.isPending ? 'Updating...' : 'Update Todo'}
@@ -271,7 +272,7 @@ function TodosComponent() {
                     </Button>
                   </div>
                 </div>
-                
+
                 {/* Display Images */}
                 {todo.image_urls && todo.image_urls.length > 0 && (
                   <ImageGallery

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 
 interface TypingIndicatorProps {
@@ -46,4 +47,4 @@ export function TypingIndicator({ isTyping, userName }: TypingIndicatorProps) {
       </span>
     </div>
   );
-} 
+}

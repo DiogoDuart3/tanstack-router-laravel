@@ -1,3 +1,4 @@
+
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { authApi } from "@/lib/api";
 import { useMutation } from "@tanstack/react-query";
@@ -65,9 +66,9 @@ function LoginComponent() {
           />
         </div>
 
-        <Button 
-          type="submit" 
-          className="w-full" 
+        <Button
+          type="submit"
+          className="w-full"
           disabled={loginMutation.isPending}
         >
           {loginMutation.isPending ? 'Signing in...' : 'Sign In'}

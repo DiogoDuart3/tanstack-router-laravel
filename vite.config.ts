@@ -1,7 +1,7 @@
 import { VitePWA } from 'vite-plugin-pwa';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
-import react from '@vitejs/plugin-react';
+// import react from '@vitejs/plugin-react-swc';
 import laravel from 'laravel-vite-plugin';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
@@ -14,11 +14,11 @@ export default defineConfig({
         },
     },
     plugins: [
+        // react(), // Removed - Laravel handles React compilation
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             refresh: true,
         }),
-        react(),
         tailwindcss(),
         tanstackRouter({
             routesDirectory: './resources/js/routes',

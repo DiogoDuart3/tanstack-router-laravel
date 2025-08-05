@@ -3,7 +3,7 @@ import '../css/app.css';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import ReactDOM from 'react-dom/client';
-import Loader from './components/loader';
+// import Loader from './components/loader';
 import { queryClient } from './lib/api';
 import { routeTree } from './routeTree.gen';
 
@@ -23,7 +23,11 @@ if ('serviceWorker' in navigator) {
 const router = createRouter({
   routeTree,
   defaultPreload: 'intent',
-  defaultPendingComponent: () => <Loader />,
+  defaultPendingComponent: () => (
+    <div className="flex h-full items-center justify-center pt-8">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
+    </div>
+  ),
   context: { queryClient },
   Wrap: function WrapComponent({ children }: { children: React.ReactNode }) {
     return (
