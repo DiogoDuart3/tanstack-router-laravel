@@ -69,7 +69,24 @@ class ChatController extends Controller
         ]);
 
         $user = Auth::user();
-        
+
+        // Create a temporary chat instance for broadcasting
+        $tempChat = new Chat([
+            'user_id' => $user?->id,
+            'username' => $user ? null : ($request->input('username') ?: 'Anonymous'),
+            'message' => $request->input('message'),
+            'sent_at' => now(),
+        ]);
+
+        // Set the user relationship for the temporary instance
+        if ($user) {
+            $tempChat->setRelation('user', $user);
+        }
+
+        // Broadcast the message to all connected clients first
+        broadcast(new MessageSent($tempChat));
+
+        // Now save the chat to the database
         $chat = Chat::create([
             'user_id' => $user?->id,
             'username' => $user ? null : ($request->input('username') ?: 'Anonymous'),
@@ -78,9 +95,6 @@ class ChatController extends Controller
         ]);
 
         $chat->load('user:id,name');
-
-        // Broadcast the message to all connected clients
-        broadcast(new MessageSent($chat));
 
         return response()->json([
             'message' => [
