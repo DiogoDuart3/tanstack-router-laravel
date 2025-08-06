@@ -333,22 +333,22 @@ function TodosComponent() {
                 <div>
                   <Input
                     placeholder="Todo title"
-                    value={editingTodo.title}
-                    onChange={(e) => setEditingTodo({ ...editingTodo, title: e.target.value })}
+                    value={editingTodo?.title || ''}
+                    onChange={(e) => editingTodo && setEditingTodo({ ...editingTodo, title: e.target.value })}
                     required
                   />
                 </div>
                 <div>
                   <Input
                     placeholder="Description (optional)"
-                    value={editingTodo.description || ''}
-                    onChange={(e) => setEditingTodo({ ...editingTodo, description: e.target.value })}
+                    value={editingTodo?.description || ''}
+                    onChange={(e) => editingTodo && setEditingTodo({ ...editingTodo, description: e.target.value })}
                   />
                 </div>
                 <div>
                   <Checkbox
-                    checked={editingTodo.completed}
-                    onCheckedChange={(checked) => setEditingTodo({ ...editingTodo, completed: !!checked })}
+                    checked={editingTodo?.completed || false}
+                    onCheckedChange={(checked) => editingTodo && setEditingTodo({ ...editingTodo, completed: !!checked })}
                   />
                   <label className="ml-2 text-sm">Completed</label>
                 </div>

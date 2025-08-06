@@ -1,19 +1,19 @@
 import { useMutation } from '@tanstack/react-query';
-import { orpc } from '@/utils/orpc';
+import { todosApi } from '@/lib/api';
 import { compressImage } from '@/utils/imageCompression';
 
 export interface CreateTodoInput {
-  text: string;
+  title: string;
+  description?: string;
   imageFile?: File;
 }
 
 export function useTodoMutations() {
   const createTodoMutation = useMutation({
     mutationFn: async (input: CreateTodoInput) => {
-      // First, create the todo with text
-      const todo = await orpc.todo.create.call({ text: input.text });
+      let images: File[] = [];
       
-      // If there's an image, compress and upload it
+      // If there's an image, compress it first
       if (input.imageFile) {
         console.log('Original image size:', input.imageFile.size, 'bytes');
         
@@ -22,41 +22,33 @@ export function useTodoMutations() {
         console.log('Compressed image size:', compressedFile.size, 'bytes');
         console.log('Compression ratio:', ((1 - compressedFile.size / input.imageFile.size) * 100).toFixed(1) + '%');
         
-        // Convert compressed file to base64
-        const base64Data = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const result = reader.result as string;
-            // Remove data URL prefix to get just the base64 data
-            const base64 = result.split(',')[1];
-            resolve(base64);
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(compressedFile);
-        });
-        
-        // Upload the compressed image
-        await orpc.todo.uploadImage.call({
-          todoId: todo.id,
-          filename: compressedFile.name,
-          contentType: compressedFile.type,
-          fileData: base64Data,
-        });
+        images = [compressedFile];
       }
       
-      return todo;
+      // Create the todo with compressed image
+      const response = await todosApi.create({
+        title: input.title,
+        description: input.description,
+        images: images.length > 0 ? images : undefined
+      });
+      
+      return response.todo;
     },
   });
 
   const toggleTodoMutation = useMutation({
     mutationFn: async (input: { id: number; completed: boolean }) => {
-      return await orpc.todo.toggle.call(input);
+      const response = await todosApi.update(String(input.id), { 
+        title: '', // This will be overridden by the server
+        completed: input.completed 
+      });
+      return response.todo;
     },
   });
 
   const deleteTodoMutation = useMutation({
     mutationFn: async (input: { id: number }) => {
-      return await orpc.todo.delete.call(input);
+      return await todosApi.delete(String(input.id));
     },
   });
 
