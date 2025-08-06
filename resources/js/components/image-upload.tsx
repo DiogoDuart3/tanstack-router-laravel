@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { compressImage } from '@/utils/imageCompression';
 
 interface ImageUploadProps {
   images: File[];
@@ -16,33 +17,62 @@ export function ImageUpload({
   images,
   onImagesChange,
   maxImages = 5,
-  maxSizePerImage = 10,
   acceptedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp']
-}: ImageUploadProps) {
+}: Omit<ImageUploadProps, 'maxSizePerImage'>) {
   const [dragOver, setDragOver] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressionProgress, setCompressionProgress] = useState({ current: 0, total: 0 });
+  const [currentProcessingFile, setCurrentProcessingFile] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (files: FileList | null) => {
-    if (!files) return;
+  const handleFileSelect = async (files: FileList | null) => {
+    if (!files || isCompressing) return;
 
+    setIsCompressing(true);
     const newFiles = Array.from(files);
     const validFiles: File[] = [];
+    
+    setCompressionProgress({ current: 0, total: newFiles.length });
+    toast.info(`Compressing ${newFiles.length} image${newFiles.length > 1 ? 's' : ''}...`);
 
-    for (const file of newFiles) {
+    for (let i = 0; i < newFiles.length; i++) {
+      const file = newFiles[i];
       // Check file type
       if (!acceptedTypes.includes(file.type)) {
         toast.error(`File ${file.name} is not a supported image type`);
+        setCompressionProgress(prev => ({ ...prev, current: prev.current + 1 }));
         continue;
       }
 
-      // Check file size
-      if (file.size > maxSizePerImage * 1024 * 1024) {
-        toast.error(`File ${file.name} is too large. Maximum size is ${maxSizePerImage}MB`);
-        continue;
+      try {
+        setCurrentProcessingFile(file.name);
+        setCompressionProgress(prev => ({ ...prev, current: i }));
+        console.log(`Compressing ${file.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+        
+        // Compress the image to ensure it's under 1MB
+        const compressedFile = await compressImage(file, 1); // 1MB max
+        validFiles.push(compressedFile);
+        
+        console.log(`Compressed ${file.name}: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+        
+        // Show success toast if compression significantly reduced file size
+        const compressionRatio = (file.size - compressedFile.size) / file.size;
+        if (compressionRatio > 0.1) { // If compressed by more than 10%
+          toast.success(`${file.name} compressed from ${(file.size / 1024 / 1024).toFixed(1)}MB to ${(compressedFile.size / 1024 / 1024).toFixed(1)}MB`);
+        } else {
+          toast.success(`${file.name} processed (${(compressedFile.size / 1024 / 1024).toFixed(1)}MB)`);
+        }
+      } catch (error) {
+        console.error('Failed to compress image:', error);
+        toast.error(`Failed to process ${file.name}. Please try a different image.`);
       }
-
-      validFiles.push(file);
+      
+      setCompressionProgress(prev => ({ ...prev, current: prev.current + 1 }));
     }
+
+    setIsCompressing(false);
+    setCurrentProcessingFile('');
+    setCompressionProgress({ current: 0, total: 0 });
 
     // Check total images limit
     const totalImages = images.length + validFiles.length;
@@ -84,27 +114,57 @@ export function ImageUpload({
           dragOver
             ? 'border-primary bg-primary/5'
             : 'border-muted-foreground/25 hover:border-muted-foreground/50'
-        }`}
+        } ${isCompressing ? 'opacity-50 pointer-events-none' : ''}`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
       >
         <div className="flex flex-col items-center gap-2">
-          <Upload className="h-8 w-8 text-muted-foreground" />
+          {isCompressing ? (
+            <Loader2 className="h-8 w-8 text-primary animate-spin" />
+          ) : (
+            <Upload className="h-8 w-8 text-muted-foreground" />
+          )}
           <div>
             <p className="text-sm font-medium">
-              Drop images here or{' '}
-              <Button
-                type="button"
-                variant="link"
-                className="p-0 h-auto text-primary"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                browse
-              </Button>
+              {isCompressing ? (
+                <div className="space-y-1">
+                  <div>
+                    Compressing {currentProcessingFile ? `"${currentProcessingFile}"` : 'images...'}
+                  </div>
+                  {compressionProgress.total > 1 && (
+                    <div className="space-y-1">
+                      <div className="text-xs text-muted-foreground">
+                        {compressionProgress.current} of {compressionProgress.total} images
+                      </div>
+                      <div className="w-48 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                        <div
+                          className="bg-primary h-1.5 rounded-full transition-all duration-300"
+                          style={{
+                            width: `${(compressionProgress.current / compressionProgress.total) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  Drop images here or{' '}
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="p-0 h-auto text-primary"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isCompressing}
+                  >
+                    browse
+                  </Button>
+                </>
+              )}
             </p>
             <p className="text-xs text-muted-foreground">
-              Up to {maxImages} images, max {maxSizePerImage}MB each
+              Up to {maxImages} images, automatically compressed to 1MB each
             </p>
           </div>
         </div>

@@ -118,28 +118,22 @@ export function ImageGallery({
 
       {/* Image Modal */}
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="!max-w-[95vw] !max-h-[95vh] !w-[95vw] !h-[95vh] p-2 [&>button]:bg-white [&>button]:text-black [&>button]:shadow-lg [&>button]:border [&>button]:opacity-90 [&>button]:hover:opacity-100">
           {selectedImage && (
-            <div className="relative">
+            <div className="relative w-full h-full flex items-center justify-center">
               <img
                 src={selectedImage}
                 alt="Full size image"
-                className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
+                className="max-w-full max-h-full object-contain rounded-lg"
               />
-              <div className="absolute top-2 right-2 flex gap-2">
+              <div className="absolute top-4 right-14">
                 <Button
                   size="sm"
                   variant="secondary"
                   onClick={() => window.open(selectedImage, '_blank')}
+                  className="bg-white text-black shadow-lg border hover:bg-gray-100"
                 >
                   <ExternalLink className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setSelectedImage(null)}
-                >
-                  <X className="h-4 w-4" />
                 </Button>
               </div>
             </div>

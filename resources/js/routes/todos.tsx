@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ImageUpload } from "@/components/image-upload";
 import { ImageGallery } from "@/components/image-gallery";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { offlineQueue } from "@/lib/offlineQueue";
 import type { Todo } from "@/types";
+import { Wifi, WifiOff, Clock, CloudOff } from "lucide-react";
 
 export const Route = createFileRoute("/todos")({
   component: TodosComponent,
@@ -29,7 +31,42 @@ function TodosComponent() {
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [editingImages, setEditingImages] = useState<File[]>([]);
   const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [queueStatus, setQueueStatus] = useState({ createCount: 0, updateCount: 0, isOnline: true });
+  const [queuedTodos, setQueuedTodos] = useState<any[]>([]);
   const queryClient = useQueryClient();
+
+  // Network status detection
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast.success('Back online! Syncing queued todos...');
+      offlineQueue.processQueue();
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast.warning('You are offline. Todos will be queued and synced when connection is restored.');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Update queue status periodically
+    const updateQueueStatus = () => {
+      setQueueStatus(offlineQueue.getQueueStatus());
+      setQueuedTodos(offlineQueue.getQueuedTodos());
+    };
+
+    const interval = setInterval(updateQueueStatus, 1000);
+    updateQueueStatus(); // Initial update
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearInterval(interval);
+    };
+  }, []);
 
   const todosQuery = useQuery({
     queryKey: ['todos'],
@@ -77,6 +114,20 @@ function TodosComponent() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (newTodo.title.trim()) {
+      if (!isOnline) {
+        // Queue for offline processing
+        offlineQueue.queueTodoCreate({
+          title: newTodo.title,
+          description: newTodo.description,
+          images: newTodoImages,
+        });
+        // Clear form after queueing
+        setNewTodo({ title: '', description: '' });
+        setNewTodoImages([]);
+        toast.success('Todo queued for sync when back online');
+        return;
+      }
+
       createMutation.mutate({
         title: newTodo.title,
         description: newTodo.description,
@@ -86,6 +137,16 @@ function TodosComponent() {
   };
 
   const handleToggle = (todo: Todo) => {
+    if (!isOnline) {
+      offlineQueue.queueTodoUpdate(todo.id.toString(), {
+        title: todo.title,
+        description: todo.description,
+        completed: !todo.completed,
+      });
+      toast.success('Update queued for sync when back online');
+      return;
+    }
+
     updateMutation.mutate({
       id: todo.id.toString(),
       data: {
@@ -112,6 +173,21 @@ function TodosComponent() {
     e.preventDefault();
     if (!editingTodo) return;
 
+    if (!isOnline) {
+      offlineQueue.queueTodoUpdate(editingTodo.id.toString(), {
+        title: editingTodo.title,
+        description: editingTodo.description,
+        completed: editingTodo.completed,
+        images: editingImages,
+        remove_images: imagesToRemove,
+      });
+      setEditingTodo(null);
+      setEditingImages([]);
+      setImagesToRemove([]);
+      toast.success('Update queued for sync when back online');
+      return;
+    }
+
     updateMutation.mutate({
       id: editingTodo.id.toString(),
       data: {
@@ -129,12 +205,63 @@ function TodosComponent() {
   };
 
   const todos = todosQuery.data?.todos || [];
+  
+  // Convert queued todos to display format
+  const queuedTodosForDisplay = queuedTodos.map(queuedTodo => ({
+    id: queuedTodo.id,
+    title: queuedTodo.data.title,
+    description: queuedTodo.data.description || '',
+    completed: false,
+    created_at: new Date(queuedTodo.timestamp).toISOString(),
+    updated_at: new Date(queuedTodo.timestamp).toISOString(),
+    image_urls: [],
+    primary_image_url: null,
+    isPending: true // Flag to identify queued todos
+  }));
+
+  // Combine regular todos with queued todos
+  const allTodos = [...queuedTodosForDisplay, ...todos];
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Todos</h1>
-        <p className="text-muted-foreground">Manage your tasks</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Todos</h1>
+            <p className="text-muted-foreground">Manage your tasks</p>
+          </div>
+          
+          {/* Network Status Indicator */}
+          <div className="flex items-center gap-4">
+            {(queueStatus.createCount > 0 || queueStatus.updateCount > 0) && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-orange-100 dark:bg-orange-900/20 rounded-full">
+                <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                <span className="text-sm text-orange-700 dark:text-orange-300">
+                  {queueStatus.createCount + queueStatus.updateCount} pending sync
+                </span>
+              </div>
+            )}
+            
+            <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+              isOnline 
+                ? 'bg-green-100 dark:bg-green-900/20' 
+                : 'bg-red-100 dark:bg-red-900/20'
+            }`}>
+              {isOnline ? (
+                <Wifi className="h-4 w-4 text-green-600 dark:text-green-400" />
+              ) : (
+                <WifiOff className="h-4 w-4 text-red-600 dark:text-red-400" />
+              )}
+              <span className={`text-sm ${
+                isOnline 
+                  ? 'text-green-700 dark:text-green-300' 
+                  : 'text-red-700 dark:text-red-300'
+              }`}>
+                {isOnline ? 'Online' : 'Offline'}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="mb-8 space-y-4">
@@ -161,9 +288,24 @@ function TodosComponent() {
             maxImages={5}
           />
         </div>
-        <Button type="submit" disabled={createMutation.isPending}>
-          {createMutation.isPending ? 'Creating...' : 'Create Todo'}
-        </Button>
+        <div className="flex gap-2">
+          <Button type="submit" disabled={createMutation.isPending}>
+            {createMutation.isPending ? 'Creating...' : !isOnline ? 'Queue Todo' : 'Create Todo'}
+          </Button>
+          {(newTodo.title || newTodo.description || newTodoImages.length > 0) && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setNewTodo({ title: '', description: '' });
+                setNewTodoImages([]);
+                toast.success('Form cleared');
+              }}
+            >
+              Clear Form
+            </Button>
+          )}
+        </div>
       </form>
 
       {todosQuery.isLoading && (
@@ -177,9 +319,15 @@ function TodosComponent() {
       )}
 
       <div className="space-y-6">
-        {todos.map((todo: Todo) => (
-          <div key={todo.id} className="border rounded-lg p-4">
-            {editingTodo?.id === todo.id ? (
+        {allTodos.map((todo: any) => (
+          <div key={todo.id} className={`border rounded-lg p-4 ${todo.isPending ? 'border-orange-300 bg-orange-50 dark:bg-orange-950/20' : ''}`}>
+            {todo.isPending && (
+              <div className="flex items-center gap-2 mb-3 text-orange-600 dark:text-orange-400">
+                <CloudOff className="h-4 w-4" />
+                <span className="text-sm font-medium">Pending sync</span>
+              </div>
+            )}
+            {editingTodo?.id === todo.id && !todo.isPending ? (
               // Edit Form
               <form onSubmit={handleUpdateTodo} className="space-y-4">
                 <div>
@@ -251,7 +399,7 @@ function TodosComponent() {
                   <Checkbox
                     checked={todo.completed}
                     onCheckedChange={() => handleToggle(todo)}
-                    disabled={updateMutation.isPending}
+                    disabled={updateMutation.isPending || todo.isPending}
                     className="mt-1"
                   />
                   <div className="flex-1">
@@ -269,6 +417,7 @@ function TodosComponent() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleEditTodo(todo)}
+                      disabled={todo.isPending}
                     >
                       Edit
                     </Button>
@@ -276,7 +425,7 @@ function TodosComponent() {
                       variant="destructive"
                       size="sm"
                       onClick={() => handleDelete(todo.id.toString())}
-                      disabled={deleteMutation.isPending}
+                      disabled={deleteMutation.isPending || todo.isPending}
                     >
                       Delete
                     </Button>
@@ -297,7 +446,7 @@ function TodosComponent() {
         ))}
       </div>
 
-      {todos.length === 0 && !todosQuery.isLoading && (
+      {allTodos.length === 0 && !todosQuery.isLoading && (
         <div className="text-center py-12 text-muted-foreground">
           No todos yet. Create your first todo above!
         </div>

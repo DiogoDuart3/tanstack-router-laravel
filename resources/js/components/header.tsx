@@ -92,6 +92,11 @@ export default function Header() {
               <span className="text-primary-foreground text-sm font-bold">A</span>
             </div>
             <span className="hidden sm:inline-block">App</span>
+            {import.meta.env.DEV && (
+              <span className="ml-2 px-1.5 py-0.5 text-xs font-medium bg-orange-500 text-white rounded-md">
+                DEV
+              </span>
+            )}
           </Link>
         </div>
 
