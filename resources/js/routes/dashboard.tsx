@@ -1,5 +1,6 @@
 import { dashboardApi } from '@/lib/api';
 import type { RecentActivityItem } from '@/types';
+import { UpdateDemo } from '@/components/UpdateDemo';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 
@@ -45,23 +46,29 @@ function DashboardComponent() {
                 </div>
             </div>
 
-            <div className="rounded-lg bg-card p-6">
-                <h2 className="mb-4 text-lg font-semibold">Recent Activity</h2>
-                {recent_activity && recent_activity.length > 0 ? (
-                    <div className="space-y-3">
-                        {recent_activity.map((todo: RecentActivityItem) => (
-                            <div key={todo.id} className="flex items-center justify-between border-b pb-2">
-                                <div>
-                                    <p className="font-medium">{todo.type}</p>
-                                    <p className="text-sm text-muted-foreground">{todo.description}</p>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div className="rounded-lg bg-card p-6">
+                    <h2 className="mb-4 text-lg font-semibold">Recent Activity</h2>
+                    {recent_activity && recent_activity.length > 0 ? (
+                        <div className="space-y-3">
+                            {recent_activity.map((todo: RecentActivityItem) => (
+                                <div key={todo.id} className="flex items-center justify-between border-b pb-2">
+                                    <div>
+                                        <p className="font-medium">{todo.type}</p>
+                                        <p className="text-sm text-muted-foreground">{todo.description}</p>
+                                    </div>
+                                    <span className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-800">{todo.type}</span>
                                 </div>
-                                <span className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-800">{todo.type}</span>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="text-muted-foreground">No recent activity</p>
-                )}
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground">No recent activity</p>
+                    )}
+                </div>
+                
+                <div className="rounded-lg bg-card p-6">
+                    <UpdateDemo />
+                </div>
             </div>
         </div>
     );

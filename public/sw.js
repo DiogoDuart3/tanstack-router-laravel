@@ -1,33 +1,61 @@
-// Service Worker for offline support
-const CACHE_NAME = 'ecomantem-v1';
+// Service Worker for offline support with version control
+const CACHE_NAME = 'laravel-app-v1';
+const APP_VERSION = self.APP_VERSION || 'unknown';
 const urlsToCache = [
   '/',
   '/todos-offline',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
   '/manifest.json'
 ];
 
 // Install event - cache resources
 self.addEventListener('install', (event) => {
+  console.log('SW Install: Version', APP_VERSION);
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Opened cache');
+        console.log('Opened cache:', CACHE_NAME);
         return cache.addAll(urlsToCache);
       })
+  );
+  // Force activate immediately
+  self.skipWaiting();
+});
+
+// Activate event - take control immediately
+self.addEventListener('activate', (event) => {
+  console.log('SW Activate: Version', APP_VERSION);
+  event.waitUntil(
+    (async () => {
+      // Clean up old caches
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames
+          .filter(cacheName => cacheName !== CACHE_NAME)
+          .map(cacheName => {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          })
+      );
+      
+      // Take control of all pages
+      return self.clients.claim();
+    })()
   );
 });
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
+  // Don't cache the version endpoint - always fetch fresh
+  if (event.request.url.includes('/api/version')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
         // Return cached version or fetch from network
         return response || fetch(event.request);
-      }
-    )
+      })
   );
 });
 

@@ -34,6 +34,31 @@ Route::get('health', function (Request $request) {
     ]);
 });
 
+// Version check endpoint
+Route::get('version', function () {
+    $gitHash = null;
+    $buildTimestamp = null;
+
+    try {
+        $gitHash = trim(shell_exec('git rev-parse HEAD'));
+    } catch (Exception $e) {
+        // Fallback if git command fails
+    }
+
+    // Try to read build timestamp from a file if it exists
+    $buildFile = public_path('build.json');
+    if (file_exists($buildFile)) {
+        $buildData = json_decode(file_get_contents($buildFile), true);
+        $buildTimestamp = $buildData['timestamp'] ?? null;
+    }
+
+    return response()->json([
+        'version' => $gitHash ?: 'unknown',
+        'build_timestamp' => $buildTimestamp,
+        'server_time' => now()->toISOString(),
+    ]);
+});
+
 // Public chat routes (accessible to everyone)
 Route::prefix('chat')->group(function () {
     Route::get('/', [ChatController::class, 'index']);

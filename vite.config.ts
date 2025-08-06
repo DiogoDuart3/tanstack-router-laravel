@@ -5,6 +5,40 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import laravel from 'laravel-vite-plugin';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
+import { execSync } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
+
+// Get git commit hash and build timestamp
+const getGitCommitHash = () => {
+    try {
+        return execSync('git rev-parse HEAD').toString().trim();
+    } catch {
+        return 'dev';
+    }
+};
+
+const buildTimestamp = Date.now();
+const commitHash = getGitCommitHash();
+
+// Plugin to generate build info file
+const buildInfoPlugin = () => ({
+    name: 'build-info',
+    buildStart() {
+        // Write build info to public directory
+        const buildInfo = {
+            version: commitHash,
+            timestamp: buildTimestamp,
+            built_at: new Date(buildTimestamp).toISOString(),
+        };
+        
+        try {
+            writeFileSync('public/build.json', JSON.stringify(buildInfo, null, 2));
+            console.log('✓ Generated build.json with version:', commitHash.substring(0, 8));
+        } catch (error) {
+            console.warn('Failed to write build.json:', error);
+        }
+    },
+});
 
 export default defineConfig({
     server: {
@@ -13,7 +47,12 @@ export default defineConfig({
             host: 'localhost',
         },
     },
+    define: {
+        __APP_VERSION__: JSON.stringify(commitHash),
+        __BUILD_TIMESTAMP__: JSON.stringify(buildTimestamp),
+    },
     plugins: [
+        buildInfoPlugin(),
         // react(), // Removed - Laravel handles React compilation
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],

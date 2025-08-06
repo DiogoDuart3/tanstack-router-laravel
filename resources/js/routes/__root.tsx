@@ -1,6 +1,7 @@
 import Header from '@/components/header';
 import { OfflineIndicator } from '@/components/offline-indicator';
 import { ThemeProvider } from '@/components/theme-provider';
+import { UpdateNotification } from '@/components/UpdateNotification';
 import { Toaster } from '@/components/ui/sonner';
 import type { QueryClient } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -42,6 +43,7 @@ function RootComponent() {
             <HeadContent />
             <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
                 <OfflineIndicator />
+                <UpdateNotification />
                 <div className="grid h-svh grid-rows-[auto_1fr]">
                     <Header />
                     {isFetching ? (
