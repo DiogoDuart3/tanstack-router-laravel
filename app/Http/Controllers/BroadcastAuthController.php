@@ -47,8 +47,17 @@ class BroadcastAuthController extends Controller
         // Handle different channel types
         switch (true) {
             case $channelName === 'private-notifications':
-                // Any authenticated user can access general notifications
-                return response()->json(true);
+                // Generate proper Pusher auth response for private channel
+                $socketId = $request->input('socket_id');
+                $channelName = $request->input('channel_name');
+                
+                // Create the string to sign
+                $stringToSign = $socketId . ':' . $channelName;
+                $signature = hash_hmac('sha256', $stringToSign, config('reverb.apps.apps.0.secret'));
+                
+                return response()->json([
+                    'auth' => config('reverb.apps.apps.0.key') . ':' . $signature
+                ]);
                 
             case str_starts_with($channelName, 'private-notifications.'):
                 // Extract user ID from channel name like "private-notifications.1"
