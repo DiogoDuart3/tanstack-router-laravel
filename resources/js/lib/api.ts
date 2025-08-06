@@ -265,6 +265,55 @@ export const healthApi = {
     check: () => apiRequest<HealthResponse>('/health'),
 };
 
+// Notification API
+export const notificationApi = {
+    sendDemo: (data?: { title?: string; message?: string; type?: string; icon?: string }) =>
+        apiRequest<{
+            success: boolean;
+            message: string;
+            queued_at: string;
+            will_send_at: string;
+            notification_data: {
+                title: string;
+                message: string;
+                type: string;
+                icon: string;
+            };
+        }>('/notifications/demo', {
+            method: 'POST',
+            body: JSON.stringify(data || {}),
+        }),
+
+    sendImmediate: (data?: { title?: string; message?: string; type?: string; icon?: string }) =>
+        apiRequest<{
+            success: boolean;
+            message: string;
+            sent_at: string;
+            notification_data: {
+                title: string;
+                message: string;
+                type: string;
+                icon: string;
+            };
+        }>('/notifications/immediate', {
+            method: 'POST',
+            body: JSON.stringify(data || {}),
+        }),
+
+    getNotifications: (limit?: number) =>
+        apiRequest<{
+            success: boolean;
+            notifications: Array<{
+                id: string;
+                type: string;
+                data: any;
+                read_at: string | null;
+                created_at: string;
+            }>;
+            count: number;
+        }>('/notifications' + (limit ? `?limit=${limit}` : '')),
+};
+
 export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {

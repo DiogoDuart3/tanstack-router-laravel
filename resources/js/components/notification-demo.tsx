@@ -1,5 +1,7 @@
 import { NotificationManager } from '@/lib/notifications';
-import { useState } from 'react';
+import { notificationApi } from '@/lib/api';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 export default function NotificationDemo() {
     const [status, setStatus] = useState(() => NotificationManager.getStatus());
@@ -58,6 +60,80 @@ export default function NotificationDemo() {
             setIsLoading(false);
         }
     };
+
+    const handleServerDemo = async () => {
+        setIsLoading(true);
+        try {
+            const response = await notificationApi.sendDemo({
+                title: '🚀 Server Notification',
+                message: 'This notification was sent from the Laravel server via the queue system! It was delayed by 3 seconds.',
+                type: 'server-demo',
+                icon: '🚀'
+            });
+            setLastNotificationResult(`Server notification queued! ${response.message} Will send at: ${new Date(response.will_send_at).toLocaleTimeString()}`);
+        } catch (error) {
+            setLastNotificationResult('Error queuing server notification: ' + (error as Error).message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleServerImmediate = async () => {
+        setIsLoading(true);
+        try {
+            const response = await notificationApi.sendImmediate({
+                title: '⚡ Immediate Server Notification',
+                message: 'This notification was sent immediately from the Laravel server!',
+                type: 'server-immediate',
+                icon: '⚡'
+            });
+            setLastNotificationResult(`Server notification sent immediately! ${response.message}`);
+        } catch (error) {
+            setLastNotificationResult('Error sending immediate notification: ' + (error as Error).message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Listen for server notifications via WebSocket/broadcast
+    useEffect(() => {
+        const handleServerNotification = (event: any) => {
+            console.log('Received server notification:', event);
+            
+            if (event.notification) {
+                const { title, message, icon } = event.notification;
+                
+                // Show browser notification
+                NotificationManager.showNotification({
+                    title: title || 'Server Notification',
+                    body: message,
+                    icon: '/favicon.ico',
+                    tag: 'server-notification',
+                    requireInteraction: false,
+                    vibrate: [200, 100, 200],
+                });
+
+                setLastNotificationResult(`🔔 Server notification received and displayed: ${title}`);
+            }
+        };
+
+        // Check if Laravel Echo is available for WebSocket notifications
+        if (window.Echo) {
+            const channel = window.Echo.private('notifications');
+            channel.notification(handleServerNotification);
+
+            return () => {
+                channel.stopListening('.notification', handleServerNotification);
+            };
+        }
+    }, []);
+
+    // Query for recent server notifications
+    const { data: serverNotifications } = useQuery({
+        queryKey: ['notifications'],
+        queryFn: () => notificationApi.getNotifications(5),
+        refetchInterval: 10000, // Refetch every 10 seconds
+    });
 
     const getPermissionBadgeColor = (permission: string) => {
         switch (permission) {
@@ -174,6 +250,26 @@ export default function NotificationDemo() {
                     >
                         {isLoading ? '⏳' : '💬'} Show Chat Notification
                     </button>
+
+                    <div className="mt-4 border-t pt-4">
+                        <h3 className="mb-2 text-sm font-semibold text-muted-foreground">Server Notifications (Requires Login)</h3>
+                        
+                        <button
+                            onClick={handleServerDemo}
+                            disabled={isLoading || !status.isSupported || status.permission !== 'granted'}
+                            className="mb-2 flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white transition-colors hover:bg-indigo-700 disabled:bg-gray-400"
+                        >
+                            {isLoading ? '⏳' : '🚀'} Queue Server Notification (3s delay)
+                        </button>
+
+                        <button
+                            onClick={handleServerImmediate}
+                            disabled={isLoading || !status.isSupported || status.permission !== 'granted'}
+                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-pink-600 px-4 py-2 font-medium text-white transition-colors hover:bg-pink-700 disabled:bg-gray-400"
+                        >
+                            {isLoading ? '⏳' : '⚡'} Send Immediate Server Notification
+                        </button>
+                    </div>
                 </div>
 
                 {lastNotificationResult && (
@@ -183,15 +279,39 @@ export default function NotificationDemo() {
                 )}
             </div>
 
+            {/* Recent Server Notifications */}
+            {serverNotifications && serverNotifications.notifications.length > 0 && (
+                <div className="rounded-lg border bg-card p-6">
+                    <h2 className="mb-4 text-lg font-semibold">📨 Recent Server Notifications</h2>
+                    <div className="space-y-3">
+                        {serverNotifications.notifications.map((notification) => (
+                            <div key={notification.id} className="flex items-start space-x-3 rounded-lg bg-muted/50 p-3">
+                                <div className="text-lg">{notification.data.icon || '🔔'}</div>
+                                <div className="flex-1 space-y-1">
+                                    <div className="text-sm font-medium">{notification.data.title}</div>
+                                    <div className="text-xs text-muted-foreground">{notification.data.message}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                        {new Date(notification.created_at).toLocaleString()}
+                                        {notification.read_at && ' • Read'}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Tips */}
             <div className="rounded-lg border bg-card p-6">
                 <h2 className="mb-4 text-lg font-semibold">💡 Tips</h2>
                 <div className="space-y-2 text-sm text-muted-foreground">
-                    <p>• Notifications work in both browser and PWA modes</p>
+                    <p>• <strong>Client notifications</strong> work in both browser and PWA modes</p>
+                    <p>• <strong>Server notifications</strong> use Laravel's queue system and WebSocket broadcasting</p>
                     <p>• PWA notifications can appear even when the app is closed</p>
                     <p>• Browser notifications only work when the tab is open</p>
+                    <p>• The queued server notification will arrive 3 seconds after clicking</p>
                     <p>• Install the app for the best notification experience</p>
-                    <p>• Some browsers may block notifications on localhost</p>
+                    <p>• Server notifications require user authentication</p>
                 </div>
             </div>
         </div>

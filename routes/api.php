@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AdminChatController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TodoController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
@@ -55,6 +56,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('{todo}', [TodoController::class, 'update']);
         Route::delete('{todo}', [TodoController::class, 'destroy']);
         Route::post('sync', [TodoController::class, 'sync']);
+    });
+
+    // Notification routes
+    Route::prefix('notifications')->group(function () {
+        Route::post('demo', [NotificationController::class, 'sendDemo']);
+        Route::post('immediate', [NotificationController::class, 'sendImmediate']);
+        Route::get('/', [NotificationController::class, 'getNotifications']);
     });
 
     // Admin chat routes (requires admin privileges)
