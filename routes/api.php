@@ -14,7 +14,6 @@ Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout']);
-    Route::get('user', [AuthController::class, 'user']);
 });
 
 // Health check
@@ -44,6 +43,7 @@ Route::prefix('chat')->group(function () {
 
 // Protected routes
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('auth/user', [AuthController::class, 'user']);
     Route::get('dashboard', [DashboardController::class, 'index']);
     Route::get('profile', [UserController::class, 'profile']);
     Route::put('profile', [UserController::class, 'updateProfile']);
