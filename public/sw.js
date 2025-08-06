@@ -181,6 +181,35 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
+// Push notification handler for background notifications
+self.addEventListener('push', (event) => {
+  console.log('SW Push: Received push notification', event);
+  
+  if (!event.data) {
+    console.log('SW Push: No data in push event');
+    return;
+  }
+
+  const data = event.data.json();
+  console.log('SW Push: Notification data', data);
+
+  const options = {
+    body: data.body || 'You have a new notification',
+    icon: data.icon || '/favicon.ico',
+    badge: '/favicon.ico',
+    tag: data.tag || 'background-notification',
+    data: data.data || {},
+    requireInteraction: data.requireInteraction || false,
+    silent: false,
+    vibrate: data.vibrate || [200, 100, 200],
+    actions: data.actions || []
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'New Notification', options)
+  );
+});
+
 // Notification close handler
 self.addEventListener('notificationclose', (event) => {
   console.log('Notification closed:', event.notification.tag);

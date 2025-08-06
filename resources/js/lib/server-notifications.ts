@@ -1,6 +1,7 @@
 /**
  * Server notifications service for handling WebSocket notifications globally
  */
+import { PushNotificationManager } from './push-notifications';
 
 export class ServerNotificationService {
     private static initialized = false;
@@ -29,6 +30,16 @@ export class ServerNotificationService {
                 if (isAuthenticated) {
                     console.log('ServerNotificationService: User authenticated, setting up listener');
                     this.setupNotificationListener();
+                    
+                    // Initialize push notifications for background support
+                    PushNotificationManager.initialize().then((success) => {
+                        if (success) {
+                            console.log('ServerNotificationService: ✅ Push notifications initialized');
+                        } else {
+                            console.warn('ServerNotificationService: ⚠️ Push notifications failed to initialize');
+                        }
+                    });
+                    
                     this.initialized = true;
                     console.log('ServerNotificationService: ✅ Initialized with Echo and auth');
                 } else {

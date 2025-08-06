@@ -210,7 +210,7 @@ export function useOfflineSync() {
                         formData.append('image', createData.image);
                     }
 
-                    const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/todos/create-with-image`, {
+                    const response = await fetch(`${import.meta.env.VITE_APP_URL}/todos/create-with-image`, {
                         method: 'POST',
                         body: formData,
                         credentials: 'include',

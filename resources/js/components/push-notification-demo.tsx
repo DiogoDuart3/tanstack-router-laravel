@@ -1,0 +1,143 @@
+import { useState, useEffect } from 'react';
+import { PushNotificationManager } from '../lib/push-notifications';
+
+export function PushNotificationDemo() {
+    const [isSubscribed, setIsSubscribed] = useState(false);
+    const [isSupported, setIsSupported] = useState(false);
+    const [permission, setPermission] = useState<NotificationPermission>('default');
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const checkSupport = async () => {
+            const supported = 'serviceWorker' in navigator && 'PushManager' in window;
+            setIsSupported(supported);
+            
+            if (supported) {
+                const subscribed = await PushNotificationManager.isSubscribed();
+                setIsSubscribed(subscribed);
+                setPermission(Notification.permission);
+            }
+        };
+
+        checkSupport();
+    }, []);
+
+    const handleSubscribe = async () => {
+        setLoading(true);
+        try {
+            const success = await PushNotificationManager.initialize();
+            if (success) {
+                setIsSubscribed(true);
+                setPermission('granted');
+                console.log('Successfully subscribed to push notifications');
+            }
+        } catch (error) {
+            console.error('Failed to subscribe to push notifications:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUnsubscribe = async () => {
+        setLoading(true);
+        try {
+            const success = await PushNotificationManager.unsubscribe();
+            if (success) {
+                setIsSubscribed(false);
+                console.log('Successfully unsubscribed from push notifications');
+            }
+        } catch (error) {
+            console.error('Failed to unsubscribe from push notifications:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleTestPush = async () => {
+        setLoading(true);
+        try {
+            await PushNotificationManager.testPushNotification();
+            console.log('Test push notification sent');
+        } catch (error) {
+            console.error('Failed to send test push notification:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (!isSupported) {
+        return (
+            <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <p className="text-red-600 dark:text-red-400">
+                    Push notifications are not supported in this browser.
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="p-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Background Push Notifications
+            </h3>
+            
+            <div className="space-y-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Status: {isSubscribed ? '✅ Subscribed' : '❌ Not subscribed'}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Permission: {permission}
+                </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+                {!isSubscribed ? (
+                    <button
+                        onClick={handleSubscribe}
+                        disabled={loading || permission === 'denied'}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {loading ? 'Subscribing...' : 'Enable Push Notifications'}
+                    </button>
+                ) : (
+                    <>
+                        <button
+                            onClick={handleUnsubscribe}
+                            disabled={loading}
+                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                        >
+                            {loading ? 'Unsubscribing...' : 'Disable Push Notifications'}
+                        </button>
+                        <button
+                            onClick={handleTestPush}
+                            disabled={loading}
+                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                        >
+                            {loading ? 'Sending...' : 'Test Background Notification'}
+                        </button>
+                    </>
+                )}
+            </div>
+
+            {permission === 'denied' && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                    <p className="text-sm text-red-700 dark:text-red-400">
+                        Push notifications are blocked. Please enable them in your browser settings and refresh the page.
+                    </p>
+                </div>
+            )}
+
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                <p className="text-sm text-blue-700 dark:text-blue-400">
+                    <strong>How to test:</strong>
+                    <br />
+                    1. Click "Enable Push Notifications" and grant permission
+                    <br />
+                    2. Close this PWA or switch to another app
+                    <br />
+                    3. Click "Test Background Notification" - you should receive a notification even when the app is closed
+                </p>
+            </div>
+        </div>
+    );
+}

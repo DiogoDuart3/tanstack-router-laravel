@@ -90,6 +90,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/', [NotificationController::class, 'getNotifications']);
     });
 
+    // Push notification routes
+    Route::prefix('push')->group(function () {
+        Route::get('vapid-key', [NotificationController::class, 'getVapidKey']);
+        Route::post('subscribe', [NotificationController::class, 'subscribe']);
+        Route::post('unsubscribe', [NotificationController::class, 'unsubscribe']);
+        Route::post('test', [NotificationController::class, 'testPush']);
+    });
+
     // Admin chat routes (requires admin privileges)
     Route::prefix('admin/chat')->group(function () {
         Route::get('/', [AdminChatController::class, 'index']);
