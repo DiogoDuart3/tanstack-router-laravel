@@ -75,6 +75,34 @@ export function PushNotificationDemo() {
             console.log('Local test notification shown');
         } else {
             console.error('Notifications not available or permission not granted');
+            console.log('Notification support:', 'Notification' in window);
+            console.log('Permission status:', Notification.permission);
+        }
+    };
+
+    const handleDebugServiceWorker = async () => {
+        if ('serviceWorker' in navigator) {
+            const registration = await navigator.serviceWorker.ready;
+            console.log('Service Worker Debug Info:', {
+                active: !!registration.active,
+                installing: !!registration.installing,
+                waiting: !!registration.waiting,
+                scope: registration.scope,
+                pushManager: !!registration.pushManager,
+                showNotification: typeof registration.showNotification
+            });
+            
+            // Test service worker notification directly
+            try {
+                await registration.showNotification('🔧 SW Direct Test', {
+                    body: 'This notification was called directly from the service worker registration',
+                    icon: '/favicon.ico',
+                    tag: 'sw-direct-test'
+                });
+                console.log('Direct service worker notification sent');
+            } catch (error) {
+                console.error('Direct SW notification failed:', error);
+            }
         }
     };
 
@@ -134,6 +162,12 @@ export function PushNotificationDemo() {
                             className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
                         >
                             Test Local Notification
+                        </button>
+                        <button
+                            onClick={handleDebugServiceWorker}
+                            className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
+                        >
+                            Debug Service Worker
                         </button>
                     </>
                 )}

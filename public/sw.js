@@ -230,21 +230,56 @@ self.addEventListener('push', (event) => {
     tag: data.tag || 'background-notification',
     data: data.data || {},
     requireInteraction: data.requireInteraction || false,
-    silent: false,
-    vibrate: data.vibrate || [200, 100, 200],
+    silent: data.silent || false,
+    ...(!(data.silent) && { vibrate: data.vibrate || [200, 100, 200] }), // Only add vibrate if not silent
     actions: data.actions || []
   };
 
   console.log('🚀 SW Push: Showing notification with options:', options);
+  console.log('🚀 SW Push: Service worker state:', self.serviceWorker?.state || 'unknown');
+  console.log('🚀 SW Push: Registration ready:', !!self.registration);
   
+  // Add more specific error handling
   event.waitUntil(
-    self.registration.showNotification(data.title || 'New Notification', options)
-      .then(() => {
+    (async () => {
+      try {
+        // Check if we can show notifications
+        const permission = await self.registration.showNotification('Test', { body: 'Checking permission', silent: true, tag: 'permission-check' })
+          .then(() => 'granted')
+          .catch((e) => {
+            console.error('❌ SW Push: Permission check failed:', e);
+            return 'denied';
+          });
+        
+        if (permission === 'denied') {
+          console.error('❌ SW Push: No notification permission');
+          return;
+        }
+        
+        // Show the actual notification
+        await self.registration.showNotification(data.title || 'New Notification', options);
         console.log('✅ SW Push: Notification displayed successfully');
-      })
-      .catch((error) => {
+        
+      } catch (error) {
         console.error('❌ SW Push: Failed to show notification:', error);
-      })
+        console.error('❌ SW Push: Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
+        
+        // Try a fallback notification
+        try {
+          await self.registration.showNotification('Push Notification Error', {
+            body: `Failed to show notification: ${error.message}`,
+            icon: '/favicon.ico',
+            tag: 'error-notification'
+          });
+        } catch (fallbackError) {
+          console.error('❌ SW Push: Even fallback notification failed:', fallbackError);
+        }
+      }
+    })()
   );
 });
 
