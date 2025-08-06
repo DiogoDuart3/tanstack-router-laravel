@@ -253,9 +253,15 @@ export class PushNotificationManager {
                 throw new Error('Failed to send test notification');
             }
 
-            console.log('PushNotificationManager: ✅ Test notification sent');
+            const result = await response.json();
+            console.log('PushNotificationManager: ✅ Test notification sent:', result);
+            
+            // Show alert with the response for debugging
+            alert(`Push notification sent! Response: ${JSON.stringify(result, null, 2)}`);
+            
         } catch (error) {
             console.error('PushNotificationManager: ❌ Failed to send test notification:', error);
+            alert(`Failed to send push notification: ${error.message}`);
         }
     }
 }

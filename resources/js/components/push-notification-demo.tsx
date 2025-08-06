@@ -65,6 +65,19 @@ export function PushNotificationDemo() {
         }
     };
 
+    const handleTestLocalNotification = () => {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('🧪 Local Test Notification', {
+                body: 'This is a local notification to test if notifications work at all',
+                icon: '/favicon.ico',
+                tag: 'local-test'
+            });
+            console.log('Local test notification shown');
+        } else {
+            console.error('Notifications not available or permission not granted');
+        }
+    };
+
     if (!isSupported) {
         return (
             <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
@@ -114,6 +127,13 @@ export function PushNotificationDemo() {
                             className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
                         >
                             {loading ? 'Sending...' : 'Test Background Notification'}
+                        </button>
+                        <button
+                            onClick={handleTestLocalNotification}
+                            disabled={permission !== 'granted'}
+                            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
+                        >
+                            Test Local Notification
                         </button>
                     </>
                 )}

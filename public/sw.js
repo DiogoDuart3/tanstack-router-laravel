@@ -183,15 +183,45 @@ self.addEventListener('notificationclick', (event) => {
 
 // Push notification handler for background notifications
 self.addEventListener('push', (event) => {
-  console.log('SW Push: Received push notification', event);
+  console.log('🔔 SW Push: Received push notification', event);
+  console.log('🔔 SW Push: Event data exists:', !!event.data);
   
   if (!event.data) {
-    console.log('SW Push: No data in push event');
+    console.log('❌ SW Push: No data in push event, showing fallback notification');
+    event.waitUntil(
+      self.registration.showNotification('New Notification', {
+        body: 'You have a new notification',
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: 'fallback-notification',
+        requireInteraction: false,
+        silent: false,
+        vibrate: [200, 100, 200]
+      })
+    );
     return;
   }
 
-  const data = event.data.json();
-  console.log('SW Push: Notification data', data);
+  let data;
+  try {
+    data = event.data.json();
+    console.log('✅ SW Push: Parsed notification data:', data);
+  } catch (error) {
+    console.error('❌ SW Push: Failed to parse push data:', error);
+    console.log('Raw push data:', event.data.text());
+    event.waitUntil(
+      self.registration.showNotification('New Notification', {
+        body: 'You have a new notification (parse error)',
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: 'parse-error-notification',
+        requireInteraction: false,
+        silent: false,
+        vibrate: [200, 100, 200]
+      })
+    );
+    return;
+  }
 
   const options = {
     body: data.body || 'You have a new notification',
@@ -205,8 +235,16 @@ self.addEventListener('push', (event) => {
     actions: data.actions || []
   };
 
+  console.log('🚀 SW Push: Showing notification with options:', options);
+  
   event.waitUntil(
     self.registration.showNotification(data.title || 'New Notification', options)
+      .then(() => {
+        console.log('✅ SW Push: Notification displayed successfully');
+      })
+      .catch((error) => {
+        console.error('❌ SW Push: Failed to show notification:', error);
+      })
   );
 });
 
