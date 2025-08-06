@@ -95,37 +95,20 @@ export default function NotificationDemo() {
         }
     };
 
-    // Listen for server notifications via WebSocket/broadcast
+    // Listen for server notifications (handled globally now, this is just for UI feedback)
     useEffect(() => {
-        const handleServerNotification = (event: any) => {
-            console.log('Received server notification:', event);
-            
-            if (event.notification) {
-                const { title, message, icon } = event.notification;
-                
-                // Show browser notification
-                NotificationManager.showNotification({
-                    title: title || 'Server Notification',
-                    body: message,
-                    icon: '/favicon.ico',
-                    tag: 'server-notification',
-                    requireInteraction: false,
-                    vibrate: [200, 100, 200],
-                });
-
-                setLastNotificationResult(`🔔 Server notification received and displayed: ${title}`);
+        const handleServerNotificationFeedback = (event: MessageEvent) => {
+            if (event.data && event.data.type === 'SERVER_NOTIFICATION_RECEIVED') {
+                setLastNotificationResult(`🔔 Server notification received: ${event.data.title}`);
             }
         };
 
-        // Check if Laravel Echo is available for WebSocket notifications
-        if (window.Echo) {
-            const channel = window.Echo.private('notifications');
-            channel.notification(handleServerNotification);
+        // Listen for service worker messages about notifications
+        navigator.serviceWorker?.addEventListener('message', handleServerNotificationFeedback);
 
-            return () => {
-                channel.stopListening('.notification', handleServerNotification);
-            };
-        }
+        return () => {
+            navigator.serviceWorker?.removeEventListener('message', handleServerNotificationFeedback);
+        };
     }, []);
 
     // Query for recent server notifications

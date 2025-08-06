@@ -6,6 +6,8 @@ import ReactDOM from 'react-dom/client';
 // import Loader from './components/loader';
 import { queryClient } from './lib/api';
 import { routeTree } from './routeTree.gen';
+import echo from './lib/echo';
+import { ServerNotificationService } from './lib/server-notifications';
 
 // Register service worker for offline support
 if ('serviceWorker' in navigator) {
@@ -20,6 +22,12 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+
+// Make Echo globally available for server notifications
+window.Echo = echo;
+
+// Initialize global server notification service
+ServerNotificationService.initialize();
 
 const router = createRouter({
     routeTree,

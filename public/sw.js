@@ -66,6 +66,33 @@ self.addEventListener('sync', (event) => {
   }
 });
 
+// Listen for messages from the main app thread
+self.addEventListener('message', (event) => {
+  console.log('SW received message:', event.data);
+  
+  if (event.data && event.data.type === 'SERVER_NOTIFICATION') {
+    // Show system notification from server event
+    const { title, body, tag, icon, data } = event.data.payload;
+    
+    self.registration.showNotification(title || 'Server Notification', {
+      body: body,
+      icon: icon || '/favicon.ico',
+      badge: '/favicon.ico',
+      tag: tag || 'server-notification',
+      data: data,
+      requireInteraction: false,
+      silent: false,
+      vibrate: [200, 100, 200],
+    }).then(() => {
+      // Send feedback to main app
+      event.source.postMessage({
+        type: 'SERVER_NOTIFICATION_RECEIVED',
+        title: title || 'Server Notification'
+      });
+    });
+  }
+});
+
 async function doBackgroundSync() {
   try {
     // Get queued actions from IndexedDB
@@ -116,6 +143,11 @@ self.addEventListener('notificationclick', (event) => {
       break;
     case 'chat':
       urlToOpen = '/chat';
+      break;
+    case 'server-notification':
+    case 'server-demo':
+    case 'server-immediate':
+      urlToOpen = '/notifications';
       break;
     default:
       urlToOpen = '/';
