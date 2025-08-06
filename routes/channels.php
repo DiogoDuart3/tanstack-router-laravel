@@ -25,3 +25,8 @@ Broadcast::channel('admin-chat', function ($user) {
 Broadcast::channel('admin-chat-typing', function ($user) {
     return $user && $user->isAdmin();
 });
+
+// Notifications channel - authenticated users can listen to their own notifications
+Broadcast::channel('notifications', function ($user) {
+    return $user ? $user : false;
+});

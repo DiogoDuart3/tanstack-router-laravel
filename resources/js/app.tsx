@@ -29,6 +29,9 @@ window.Echo = echo;
 // Initialize global server notification service
 ServerNotificationService.initialize();
 
+// Make test function globally available for debugging
+(window as any).testServerNotification = ServerNotificationService.testServiceWorkerNotification;
+
 const router = createRouter({
     routeTree,
     defaultPreload: 'intent',
