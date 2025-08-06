@@ -271,25 +271,10 @@ self.addEventListener('push', (event) => {
     (async () => {
       try {
         console.log('🔥 SW Push: About to show notification...');
-        console.log('🔥 SW Push: Registration state:', self.registration);
-        console.log('🔥 SW Push: Title:', data.title || 'New Notification');
-        console.log('🔥 SW Push: Options:', JSON.stringify(options, null, 2));
-        
-        // Check notification permission in service worker context
-        if ('Notification' in self) {
-          console.log('🔥 SW Push: Notification permission in SW:', Notification.permission);
-        } else {
-          console.log('🔥 SW Push: Notification not available in SW context');
-        }
-        
-        // Test if showNotification method exists and is callable
-        if (typeof self.registration.showNotification !== 'function') {
-          throw new Error('showNotification is not a function');
-        }
         
         // Show the actual notification
-        const result = await self.registration.showNotification(data.title || 'New Notification', options);
-        console.log('✅ SW Push: Notification displayed successfully, result:', result);
+        await self.registration.showNotification(data.title || 'New Notification', options);
+        console.log('✅ SW Push: Notification displayed successfully');
         
       } catch (error) {
         console.error('❌ SW Push: Failed to show notification:', error);
