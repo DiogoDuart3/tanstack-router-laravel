@@ -184,6 +184,7 @@ export interface QueuedUpdate {
 // Window augmentation for Pusher
 declare global {
     interface Window {
-        Pusher: typeof import('pusher-js');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        Pusher: any;
     }
 }
