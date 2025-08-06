@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 
 export function useInitials() {

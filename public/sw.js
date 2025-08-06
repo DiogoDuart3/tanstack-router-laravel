@@ -70,6 +70,72 @@ async function doBackgroundSync() {
   }
 }
 
+// Notification click handler
+self.addEventListener('notificationclick', (event) => {
+  console.log('Notification clicked:', event.notification.tag);
+  
+  event.notification.close();
+  
+  // Handle different notification types
+  let urlToOpen = '/';
+  
+  switch (event.notification.tag) {
+    case 'welcome':
+      urlToOpen = '/';
+      break;
+    case 'todo-reminder':
+      urlToOpen = '/todos';
+      break;
+    case 'chat':
+      urlToOpen = '/chat';
+      break;
+    default:
+      urlToOpen = '/';
+  }
+
+  // Open the app or focus existing window
+  event.waitUntil(
+    self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
+      .then((clients) => {
+        // Check if app is already open
+        const existingClient = clients.find(client => 
+          client.url.includes(self.location.origin)
+        );
+        
+        if (existingClient) {
+          // Focus existing window and navigate
+          existingClient.focus();
+          if (existingClient.url !== self.location.origin + urlToOpen) {
+            existingClient.postMessage({
+              type: 'NAVIGATE',
+              url: urlToOpen
+            });
+          }
+        } else {
+          // Open new window
+          return self.clients.openWindow(urlToOpen);
+        }
+      })
+  );
+});
+
+// Notification close handler
+self.addEventListener('notificationclose', (event) => {
+  console.log('Notification closed:', event.notification.tag);
+  
+  // Track notification dismissal if needed
+  event.waitUntil(
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => {
+        client.postMessage({
+          type: 'NOTIFICATION_DISMISSED',
+          tag: event.notification.tag
+        });
+      });
+    })
+  );
+});
+
 async function processAction(action) {
   switch (action.type) {
     case 'create':

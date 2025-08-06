@@ -1,4 +1,3 @@
-
 import AppLogoIcon from '@/components/app-logo-icon';
 // import { type SharedData } from '@/types'; // No longer needed with TanStack Router
 import { Link } from '@tanstack/react-router';
@@ -15,7 +14,7 @@ export default function AuthSplitLayout({ children, title, description }: PropsW
     const name = 'App Name';
     const quote = {
         message: 'Welcome to our application',
-        author: 'Team'
+        author: 'Team',
     };
 
     return (

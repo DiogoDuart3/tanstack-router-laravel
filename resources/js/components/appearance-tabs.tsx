@@ -1,4 +1,3 @@
-
 import { Appearance, useAppearance } from '@/hooks/use-appearance';
 import { cn } from '@/lib/utils';
 import { LucideIcon, Monitor, Moon, Sun } from 'lucide-react';

@@ -1,4 +1,3 @@
-
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Link } from '@tanstack/react-router';
 import { type PropsWithChildren } from 'react';

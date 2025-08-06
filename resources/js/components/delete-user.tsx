@@ -1,4 +1,3 @@
-
 import { useForm } from '@tanstack/react-form';
 import { FormEventHandler, useRef } from 'react';
 
@@ -15,13 +14,13 @@ export default function DeleteUser() {
     const passwordInput = useRef<HTMLInputElement>(null);
     const form = useForm({
         defaultValues: {
-            password: ''
+            password: '',
         },
         onSubmit: async ({ value }) => {
             // TODO: Replace with actual API call for deleting user
             console.log('Delete user with password:', value.password);
             // router.navigate({ to: '/auth/login' });
-        }
+        },
     });
 
     const handleSubmit: FormEventHandler = (e) => {
@@ -74,12 +73,7 @@ export default function DeleteUser() {
                                     )}
                                 />
 
-                                <form.Field
-                                    name="password"
-                                    children={(field) => (
-                                        <InputError message={field.state.meta.errors.join(', ')} />
-                                    )}
-                                />
+                                <form.Field name="password" children={(field) => <InputError message={field.state.meta.errors.join(', ')} />} />
                             </div>
 
                             <DialogFooter className="gap-2">

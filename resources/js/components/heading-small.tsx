@@ -1,4 +1,3 @@
-
 export default function HeadingSmall({ title, description }: { title: string; description?: string }) {
     return (
         <header>

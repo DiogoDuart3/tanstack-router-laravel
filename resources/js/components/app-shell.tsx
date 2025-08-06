@@ -1,4 +1,3 @@
-
 import { SidebarProvider } from '@/components/ui/sidebar';
 // import { SharedData } from '@/types'; // No longer needed with TanStack Router
 // Note: This component needs to be refactored to get sidebar state from TanStack Router context or another state management solution

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TodosRouteImport } from './routes/todos'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as InstallPwaRouteImport } from './routes/install-pwa'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -28,6 +29,11 @@ const TodosRoute = TodosRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InstallPwaRoute = InstallPwaRouteImport.update({
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/health': typeof HealthRoute
   '/install-pwa': typeof InstallPwaRoute
+  '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
   '/todos': typeof TodosRoute
   '/auth/login': typeof AuthLoginRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/health': typeof HealthRoute
   '/install-pwa': typeof InstallPwaRoute
+  '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
   '/todos': typeof TodosRoute
   '/auth/login': typeof AuthLoginRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/health': typeof HealthRoute
   '/install-pwa': typeof InstallPwaRoute
+  '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
   '/todos': typeof TodosRoute
   '/auth/login': typeof AuthLoginRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/health'
     | '/install-pwa'
+    | '/notifications'
     | '/profile'
     | '/todos'
     | '/auth/login'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/health'
     | '/install-pwa'
+    | '/notifications'
     | '/profile'
     | '/todos'
     | '/auth/login'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/health'
     | '/install-pwa'
+    | '/notifications'
     | '/profile'
     | '/todos'
     | '/auth/login'
@@ -154,6 +166,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   HealthRoute: typeof HealthRoute
   InstallPwaRoute: typeof InstallPwaRoute
+  NotificationsRoute: typeof NotificationsRoute
   ProfileRoute: typeof ProfileRoute
   TodosRoute: typeof TodosRoute
   AuthLoginRoute: typeof AuthLoginRoute
@@ -174,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/install-pwa': {
@@ -242,6 +262,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   HealthRoute: HealthRoute,
   InstallPwaRoute: InstallPwaRoute,
+  NotificationsRoute: NotificationsRoute,
   ProfileRoute: ProfileRoute,
   TodosRoute: TodosRoute,
   AuthLoginRoute: AuthLoginRoute,

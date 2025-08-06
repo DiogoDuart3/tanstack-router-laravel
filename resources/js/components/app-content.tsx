@@ -1,6 +1,4 @@
-
 import { SidebarInset } from '@/components/ui/sidebar';
-
 
 interface AppContentProps extends React.ComponentProps<'main'> {
     variant?: 'header' | 'sidebar';

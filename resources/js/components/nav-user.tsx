@@ -1,4 +1,3 @@
-
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { UserInfo } from '@/components/user-info';
@@ -14,7 +13,7 @@ export function NavUser() {
     // const { auth } = usePage<SharedData>().props;
     const { state } = useSidebar();
     const isMobile = useIsMobile();
-    
+
     // Temporary mock data - replace with actual auth state
     const auth = {
         user: {
@@ -25,7 +24,7 @@ export function NavUser() {
             email_verified_at: null,
             created_at: '2024-01-01T00:00:00.000000Z',
             updated_at: '2024-01-01T00:00:00.000000Z',
-        }
+        },
     };
 
     return (

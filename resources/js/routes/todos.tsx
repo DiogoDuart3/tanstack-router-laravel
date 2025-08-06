@@ -1,477 +1,461 @@
-
-import { createFileRoute } from "@tanstack/react-router";
-import { todosApi } from "@/lib/api";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ImageUpload } from "@/components/image-upload";
-import { ImageGallery } from "@/components/image-gallery";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
-import { offlineQueue } from "@/lib/offlineQueue";
-import type { Todo, QueuedTodo } from "@/types";
+import { ImageGallery } from '@/components/image-gallery';
+import { ImageUpload } from '@/components/image-upload';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { todosApi } from '@/lib/api';
+import { offlineQueue } from '@/lib/offlineQueue';
+import type { QueuedTodo, Todo } from '@/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createFileRoute } from '@tanstack/react-router';
+import { Clock, CloudOff, Wifi, WifiOff } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 // Type for queued todos in display format
 type QueuedTodoDisplay = {
-  id: string;
-  title: string;
-  description: string;
-  completed: boolean;
-  created_at: string;
-  updated_at: string;
-  image_urls: string[];
-  primary_image_url: null;
-  isPending: true;
+    id: string;
+    title: string;
+    description: string;
+    completed: boolean;
+    created_at: string;
+    updated_at: string;
+    image_urls: string[];
+    primary_image_url: null;
+    isPending: true;
 };
 
 // Union type for all todos
 type TodoDisplay = Todo | QueuedTodoDisplay;
-import { Wifi, WifiOff, Clock, CloudOff } from "lucide-react";
 
-export const Route = createFileRoute("/todos")({
-  component: TodosComponent,
+export const Route = createFileRoute('/todos')({
+    component: TodosComponent,
 });
 
 interface UpdateTodoData {
-  title: string;
-  description?: string;
-  completed?: boolean;
-  images?: File[];
-  remove_images?: string[];
+    title: string;
+    description?: string;
+    completed?: boolean;
+    images?: File[];
+    remove_images?: string[];
 }
 
 function TodosComponent() {
-  const [newTodo, setNewTodo] = useState({ title: '', description: '' });
-  const [newTodoImages, setNewTodoImages] = useState<File[]>([]);
-  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
-  const [editingImages, setEditingImages] = useState<File[]>([]);
-  const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [queueStatus, setQueueStatus] = useState({ createCount: 0, updateCount: 0, isOnline: true });
-  const [queuedTodos, setQueuedTodos] = useState<QueuedTodo[]>([]);
-  const queryClient = useQueryClient();
+    const [newTodo, setNewTodo] = useState({ title: '', description: '' });
+    const [newTodoImages, setNewTodoImages] = useState<File[]>([]);
+    const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+    const [editingImages, setEditingImages] = useState<File[]>([]);
+    const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [queueStatus, setQueueStatus] = useState({ createCount: 0, updateCount: 0, isOnline: true });
+    const [queuedTodos, setQueuedTodos] = useState<QueuedTodo[]>([]);
+    const queryClient = useQueryClient();
 
-  // Network status detection
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      toast.success('Back online! Syncing queued todos...');
-      offlineQueue.processQueue();
-    };
+    // Network status detection
+    useEffect(() => {
+        const handleOnline = () => {
+            setIsOnline(true);
+            toast.success('Back online! Syncing queued todos...');
+            offlineQueue.processQueue();
+        };
 
-    const handleOffline = () => {
-      setIsOnline(false);
-      toast.warning('You are offline. Todos will be queued and synced when connection is restored.');
-    };
+        const handleOffline = () => {
+            setIsOnline(false);
+            toast.warning('You are offline. Todos will be queued and synced when connection is restored.');
+        };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
 
-    // Update queue status periodically
-    const updateQueueStatus = () => {
-      setQueueStatus(offlineQueue.getQueueStatus());
-      setQueuedTodos(offlineQueue.getQueuedTodos());
-    };
+        // Update queue status periodically
+        const updateQueueStatus = () => {
+            setQueueStatus(offlineQueue.getQueueStatus());
+            setQueuedTodos(offlineQueue.getQueuedTodos());
+        };
 
-    const interval = setInterval(updateQueueStatus, 1000);
-    updateQueueStatus(); // Initial update
+        const interval = setInterval(updateQueueStatus, 1000);
+        updateQueueStatus(); // Initial update
 
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      clearInterval(interval);
-    };
-  }, []);
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+            clearInterval(interval);
+        };
+    }, []);
 
-  const todosQuery = useQuery({
-    queryKey: ['todos'],
-    queryFn: todosApi.getAll,
-  });
-
-  const createMutation = useMutation({
-    mutationFn: todosApi.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todos'] });
-      setNewTodo({ title: '', description: '' });
-      setNewTodoImages([]);
-      toast.success('Todo created successfully');
-    },
-    onError: (error) => {
-      toast.error(`Failed to create todo: ${error.message}`);
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateTodoData }) => todosApi.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todos'] });
-      setEditingTodo(null);
-      setEditingImages([]);
-      setImagesToRemove([]);
-      toast.success('Todo updated successfully');
-    },
-    onError: (error) => {
-      toast.error(`Failed to update todo: ${error.message}`);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: todosApi.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todos'] });
-      toast.success('Todo deleted successfully');
-    },
-    onError: (error) => {
-      toast.error(`Failed to delete todo: ${error.message}`);
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newTodo.title.trim()) {
-      if (!isOnline) {
-        // Queue for offline processing
-        offlineQueue.queueTodoCreate({
-          title: newTodo.title,
-          description: newTodo.description,
-          images: newTodoImages,
-        });
-        // Clear form after queueing
-        setNewTodo({ title: '', description: '' });
-        setNewTodoImages([]);
-        toast.success('Todo queued for sync when back online');
-        return;
-      }
-
-      createMutation.mutate({
-        title: newTodo.title,
-        description: newTodo.description,
-        images: newTodoImages,
-      });
-    }
-  };
-
-  const handleToggle = (todo: Todo) => {
-    if (!isOnline) {
-      offlineQueue.queueTodoUpdate(todo.id.toString(), {
-        title: todo.title,
-        description: todo.description,
-        completed: !todo.completed,
-      });
-      toast.success('Update queued for sync when back online');
-      return;
-    }
-
-    updateMutation.mutate({
-      id: todo.id.toString(),
-      data: {
-        title: todo.title,
-        description: todo.description,
-        completed: !todo.completed,
-      },
+    const todosQuery = useQuery({
+        queryKey: ['todos'],
+        queryFn: todosApi.getAll,
     });
-  };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this todo?')) {
-      deleteMutation.mutate(id);
-    }
-  };
-
-  const handleEditTodo = (todo: Todo) => {
-    setEditingTodo(todo);
-    setEditingImages([]);
-    setImagesToRemove([]);
-  };
-
-  const handleUpdateTodo = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingTodo) return;
-
-    if (!isOnline) {
-      offlineQueue.queueTodoUpdate(editingTodo.id.toString(), {
-        title: editingTodo.title,
-        description: editingTodo.description,
-        completed: editingTodo.completed,
-        images: editingImages,
-        remove_images: imagesToRemove,
-      });
-      setEditingTodo(null);
-      setEditingImages([]);
-      setImagesToRemove([]);
-      toast.success('Update queued for sync when back online');
-      return;
-    }
-
-    updateMutation.mutate({
-      id: editingTodo.id.toString(),
-      data: {
-        title: editingTodo.title,
-        description: editingTodo.description,
-        completed: editingTodo.completed,
-        images: editingImages,
-        remove_images: imagesToRemove,
-      },
+    const createMutation = useMutation({
+        mutationFn: todosApi.create,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['todos'] });
+            setNewTodo({ title: '', description: '' });
+            setNewTodoImages([]);
+            toast.success('Todo created successfully');
+        },
+        onError: (error) => {
+            toast.error(`Failed to create todo: ${error.message}`);
+        },
     });
-  };
 
-  const handleRemoveExistingImage = (imagePath: string) => {
-    setImagesToRemove(prev => [...prev, imagePath]);
-  };
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }: { id: string; data: UpdateTodoData }) => todosApi.update(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['todos'] });
+            setEditingTodo(null);
+            setEditingImages([]);
+            setImagesToRemove([]);
+            toast.success('Todo updated successfully');
+        },
+        onError: (error) => {
+            toast.error(`Failed to update todo: ${error.message}`);
+        },
+    });
 
-  const todos = todosQuery.data?.todos || [];
+    const deleteMutation = useMutation({
+        mutationFn: todosApi.delete,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['todos'] });
+            toast.success('Todo deleted successfully');
+        },
+        onError: (error) => {
+            toast.error(`Failed to delete todo: ${error.message}`);
+        },
+    });
 
-  // Convert queued todos to display format
-  const queuedTodosForDisplay = queuedTodos.map(queuedTodo => ({
-    id: queuedTodo.id,
-    title: queuedTodo.data.title,
-    description: queuedTodo.data.description || '',
-    completed: false,
-    created_at: new Date(queuedTodo.timestamp).toISOString(),
-    updated_at: new Date(queuedTodo.timestamp).toISOString(),
-    image_urls: [],
-    primary_image_url: null,
-    isPending: true // Flag to identify queued todos
-  }));
-
-  // Combine regular todos with queued todos
-  const allTodos = [...queuedTodosForDisplay, ...todos] as TodoDisplay[];
-
-  // Type guard to check if todo is a queued todo
-  const isQueuedTodo = (todo: TodoDisplay): todo is QueuedTodoDisplay => {
-    return 'isPending' in todo && todo.isPending === true;
-  };
-
-  return (
-    <div className="container mx-auto max-w-4xl px-4 py-6">
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Todos</h1>
-            <p className="text-muted-foreground">Manage your tasks</p>
-          </div>
-
-          {/* Network Status Indicator */}
-          <div className="flex items-center gap-4">
-            {(queueStatus.createCount > 0 || queueStatus.updateCount > 0) && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-orange-100 dark:bg-orange-900/20 rounded-full">
-                <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                <span className="text-sm text-orange-700 dark:text-orange-300">
-                  {queueStatus.createCount + queueStatus.updateCount} pending sync
-                </span>
-              </div>
-            )}
-
-            <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-              isOnline
-                ? 'bg-green-100 dark:bg-green-900/20'
-                : 'bg-red-100 dark:bg-red-900/20'
-            }`}>
-              {isOnline ? (
-                <Wifi className="h-4 w-4 text-green-600 dark:text-green-400" />
-              ) : (
-                <WifiOff className="h-4 w-4 text-red-600 dark:text-red-400" />
-              )}
-              <span className={`text-sm ${
-                isOnline
-                  ? 'text-green-700 dark:text-green-300'
-                  : 'text-red-700 dark:text-red-300'
-              }`}>
-                {isOnline ? 'Online' : 'Offline'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="mb-8 space-y-4">
-        <div>
-          <Input
-            placeholder="Todo title"
-            value={newTodo.title}
-            onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
-            required
-          />
-        </div>
-        <div>
-          <Input
-            placeholder="Description (optional)"
-            value={newTodo.description}
-            onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-2">Images (optional)</label>
-          <ImageUpload
-            images={newTodoImages}
-            onImagesChange={setNewTodoImages}
-            maxImages={5}
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button type="submit" disabled={createMutation.isPending}>
-            {createMutation.isPending ? 'Creating...' : !isOnline ? 'Queue Todo' : 'Create Todo'}
-          </Button>
-          {(newTodo.title || newTodo.description || newTodoImages.length > 0) && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newTodo.title.trim()) {
+            if (!isOnline) {
+                // Queue for offline processing
+                offlineQueue.queueTodoCreate({
+                    title: newTodo.title,
+                    description: newTodo.description,
+                    images: newTodoImages,
+                });
+                // Clear form after queueing
                 setNewTodo({ title: '', description: '' });
                 setNewTodoImages([]);
-                toast.success('Form cleared');
-              }}
-            >
-              Clear Form
-            </Button>
-          )}
-        </div>
-      </form>
+                toast.success('Todo queued for sync when back online');
+                return;
+            }
 
-      {todosQuery.isLoading && (
-        <div className="flex items-center justify-center h-32">Loading todos...</div>
-      )}
+            createMutation.mutate({
+                title: newTodo.title,
+                description: newTodo.description,
+                images: newTodoImages,
+            });
+        }
+    };
 
-      {todosQuery.error && (
-        <div className="flex items-center justify-center h-32 text-red-500">
-          Error loading todos: {todosQuery.error.message}
-        </div>
-      )}
+    const handleToggle = (todo: Todo) => {
+        if (!isOnline) {
+            offlineQueue.queueTodoUpdate(todo.id.toString(), {
+                title: todo.title,
+                description: todo.description,
+                completed: !todo.completed,
+            });
+            toast.success('Update queued for sync when back online');
+            return;
+        }
 
-      <div className="space-y-6">
-        {allTodos.map((todo) => (
-          <div key={todo.id} className={`border rounded-lg p-4 ${isQueuedTodo(todo) ? 'border-orange-300 bg-orange-50 dark:bg-orange-950/20' : ''}`}>
-            {isQueuedTodo(todo) && (
-              <div className="flex items-center gap-2 mb-3 text-orange-600 dark:text-orange-400">
-                <CloudOff className="h-4 w-4" />
-                <span className="text-sm font-medium">Pending sync</span>
-              </div>
-            )}
-            {editingTodo?.id === todo.id && !isQueuedTodo(todo) ? (
-              // Edit Form
-              <form onSubmit={handleUpdateTodo} className="space-y-4">
-                <div>
-                  <Input
-                    placeholder="Todo title"
-                    value={editingTodo?.title || ''}
-                    onChange={(e) => editingTodo && setEditingTodo({ ...editingTodo, title: e.target.value })}
-                    required
-                  />
+        updateMutation.mutate({
+            id: todo.id.toString(),
+            data: {
+                title: todo.title,
+                description: todo.description,
+                completed: !todo.completed,
+            },
+        });
+    };
+
+    const handleDelete = (id: string) => {
+        if (confirm('Are you sure you want to delete this todo?')) {
+            deleteMutation.mutate(id);
+        }
+    };
+
+    const handleEditTodo = (todo: Todo) => {
+        setEditingTodo(todo);
+        setEditingImages([]);
+        setImagesToRemove([]);
+    };
+
+    const handleUpdateTodo = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingTodo) return;
+
+        if (!isOnline) {
+            offlineQueue.queueTodoUpdate(editingTodo.id.toString(), {
+                title: editingTodo.title,
+                description: editingTodo.description,
+                completed: editingTodo.completed,
+                images: editingImages,
+                remove_images: imagesToRemove,
+            });
+            setEditingTodo(null);
+            setEditingImages([]);
+            setImagesToRemove([]);
+            toast.success('Update queued for sync when back online');
+            return;
+        }
+
+        updateMutation.mutate({
+            id: editingTodo.id.toString(),
+            data: {
+                title: editingTodo.title,
+                description: editingTodo.description,
+                completed: editingTodo.completed,
+                images: editingImages,
+                remove_images: imagesToRemove,
+            },
+        });
+    };
+
+    const handleRemoveExistingImage = (imagePath: string) => {
+        setImagesToRemove((prev) => [...prev, imagePath]);
+    };
+
+    const todos = todosQuery.data?.todos || [];
+
+    // Convert queued todos to display format
+    const queuedTodosForDisplay = queuedTodos.map((queuedTodo) => ({
+        id: queuedTodo.id,
+        title: queuedTodo.data.title,
+        description: queuedTodo.data.description || '',
+        completed: false,
+        created_at: new Date(queuedTodo.timestamp).toISOString(),
+        updated_at: new Date(queuedTodo.timestamp).toISOString(),
+        image_urls: [],
+        primary_image_url: null,
+        isPending: true, // Flag to identify queued todos
+    }));
+
+    // Combine regular todos with queued todos
+    const allTodos = [...queuedTodosForDisplay, ...todos] as TodoDisplay[];
+
+    // Type guard to check if todo is a queued todo
+    const isQueuedTodo = (todo: TodoDisplay): todo is QueuedTodoDisplay => {
+        return 'isPending' in todo && todo.isPending === true;
+    };
+
+    return (
+        <div className="container mx-auto max-w-4xl px-4 py-6">
+            <div className="mb-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold">Todos</h1>
+                        <p className="text-muted-foreground">Manage your tasks</p>
+                    </div>
+
+                    {/* Network Status Indicator */}
+                    <div className="flex items-center gap-4">
+                        {(queueStatus.createCount > 0 || queueStatus.updateCount > 0) && (
+                            <div className="flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 dark:bg-orange-900/20">
+                                <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                                <span className="text-sm text-orange-700 dark:text-orange-300">
+                                    {queueStatus.createCount + queueStatus.updateCount} pending sync
+                                </span>
+                            </div>
+                        )}
+
+                        <div
+                            className={`flex items-center gap-2 rounded-full px-3 py-1 ${
+                                isOnline ? 'bg-green-100 dark:bg-green-900/20' : 'bg-red-100 dark:bg-red-900/20'
+                            }`}
+                        >
+                            {isOnline ? (
+                                <Wifi className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            ) : (
+                                <WifiOff className="h-4 w-4 text-red-600 dark:text-red-400" />
+                            )}
+                            <span className={`text-sm ${isOnline ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                                {isOnline ? 'Online' : 'Offline'}
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                  <Input
-                    placeholder="Description (optional)"
-                    value={editingTodo?.description || ''}
-                    onChange={(e) => editingTodo && setEditingTodo({ ...editingTodo, description: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Checkbox
-                    checked={editingTodo?.completed || false}
-                    onCheckedChange={(checked) => editingTodo && setEditingTodo({ ...editingTodo, completed: !!checked })}
-                  />
-                  <label className="ml-2 text-sm">Completed</label>
-                </div>
+            </div>
 
-                {/* Existing Images */}
-                {todo.image_urls && todo.image_urls.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Current Images</label>
-                    <ImageGallery
-                      images={todo.image_urls.filter((url: string) => !imagesToRemove.includes(url.split('/storage/')[1]))}
-                      primaryImage={todo.primary_image_url || undefined}
-                      onRemoveImage={handleRemoveExistingImage}
+            <form onSubmit={handleSubmit} className="mb-8 space-y-4">
+                <div>
+                    <Input
+                        placeholder="Todo title"
+                        value={newTodo.title}
+                        onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
+                        required
                     />
-                  </div>
-                )}
-
-                {/* Add New Images */}
+                </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Add New Images</label>
-                  <ImageUpload
-                    images={editingImages}
-                    onImagesChange={setEditingImages}
-                    maxImages={5 - (todo.image_urls?.length || 0) + imagesToRemove.length}
-                  />
+                    <Input
+                        placeholder="Description (optional)"
+                        value={newTodo.description}
+                        onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
+                    />
                 </div>
-
+                <div>
+                    <label className="mb-2 block text-sm font-medium">Images (optional)</label>
+                    <ImageUpload images={newTodoImages} onImagesChange={setNewTodoImages} maxImages={5} />
+                </div>
                 <div className="flex gap-2">
-                  <Button type="submit" disabled={updateMutation.isPending}>
-                    {updateMutation.isPending ? 'Updating...' : 'Update Todo'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setEditingTodo(null);
-                      setEditingImages([]);
-                      setImagesToRemove([]);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            ) : (
-              // Display Mode
-              <div className="space-y-3">
-                <div className="flex items-start space-x-4">
-                  <Checkbox
-                    checked={todo.completed}
-                    onCheckedChange={() => !isQueuedTodo(todo) && handleToggle(todo as Todo)}
-                    disabled={updateMutation.isPending || isQueuedTodo(todo)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <h3 className={`font-medium ${todo.completed ? 'line-through text-muted-foreground' : ''}`}>
-                      {todo.title}
-                    </h3>
-                    {todo.description && (
-                      <p className={`text-sm ${todo.completed ? 'line-through text-muted-foreground' : 'text-muted-foreground'}`}>
-                        {todo.description}
-                      </p>
+                    <Button type="submit" disabled={createMutation.isPending}>
+                        {createMutation.isPending ? 'Creating...' : !isOnline ? 'Queue Todo' : 'Create Todo'}
+                    </Button>
+                    {(newTodo.title || newTodo.description || newTodoImages.length > 0) && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                                setNewTodo({ title: '', description: '' });
+                                setNewTodoImages([]);
+                                toast.success('Form cleared');
+                            }}
+                        >
+                            Clear Form
+                        </Button>
                     )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => !isQueuedTodo(todo) && handleEditTodo(todo as Todo)}
-                      disabled={isQueuedTodo(todo)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(todo.id.toString())}
-                      disabled={deleteMutation.isPending || isQueuedTodo(todo)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
                 </div>
+            </form>
 
-                {/* Display Images */}
-                {todo.image_urls && todo.image_urls.length > 0 && (
-                  <ImageGallery
-                    images={todo.image_urls}
-                    primaryImage={todo.primary_image_url || undefined}
-                    readOnly={true}
-                  />
-                )}
-              </div>
+            {todosQuery.isLoading && <div className="flex h-32 items-center justify-center">Loading todos...</div>}
+
+            {todosQuery.error && (
+                <div className="flex h-32 items-center justify-center text-red-500">Error loading todos: {todosQuery.error.message}</div>
             )}
-          </div>
-        ))}
-      </div>
 
-      {allTodos.length === 0 && !todosQuery.isLoading && (
-        <div className="text-center py-12 text-muted-foreground">
-          No todos yet. Create your first todo above!
+            <div className="space-y-6">
+                {allTodos.map((todo) => (
+                    <div
+                        key={todo.id}
+                        className={`rounded-lg border p-4 ${isQueuedTodo(todo) ? 'border-orange-300 bg-orange-50 dark:bg-orange-950/20' : ''}`}
+                    >
+                        {isQueuedTodo(todo) && (
+                            <div className="mb-3 flex items-center gap-2 text-orange-600 dark:text-orange-400">
+                                <CloudOff className="h-4 w-4" />
+                                <span className="text-sm font-medium">Pending sync</span>
+                            </div>
+                        )}
+                        {editingTodo?.id === todo.id && !isQueuedTodo(todo) ? (
+                            // Edit Form
+                            <form onSubmit={handleUpdateTodo} className="space-y-4">
+                                <div>
+                                    <Input
+                                        placeholder="Todo title"
+                                        value={editingTodo?.title || ''}
+                                        onChange={(e) => editingTodo && setEditingTodo({ ...editingTodo, title: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <Input
+                                        placeholder="Description (optional)"
+                                        value={editingTodo?.description || ''}
+                                        onChange={(e) => editingTodo && setEditingTodo({ ...editingTodo, description: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <Checkbox
+                                        checked={editingTodo?.completed || false}
+                                        onCheckedChange={(checked) => editingTodo && setEditingTodo({ ...editingTodo, completed: !!checked })}
+                                    />
+                                    <label className="ml-2 text-sm">Completed</label>
+                                </div>
+
+                                {/* Existing Images */}
+                                {todo.image_urls && todo.image_urls.length > 0 && (
+                                    <div>
+                                        <label className="mb-2 block text-sm font-medium">Current Images</label>
+                                        <ImageGallery
+                                            images={todo.image_urls.filter((url: string) => !imagesToRemove.includes(url.split('/storage/')[1]))}
+                                            primaryImage={todo.primary_image_url || undefined}
+                                            onRemoveImage={handleRemoveExistingImage}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Add New Images */}
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">Add New Images</label>
+                                    <ImageUpload
+                                        images={editingImages}
+                                        onImagesChange={setEditingImages}
+                                        maxImages={5 - (todo.image_urls?.length || 0) + imagesToRemove.length}
+                                    />
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <Button type="submit" disabled={updateMutation.isPending}>
+                                        {updateMutation.isPending ? 'Updating...' : 'Update Todo'}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            setEditingTodo(null);
+                                            setEditingImages([]);
+                                            setImagesToRemove([]);
+                                        }}
+                                    >
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </form>
+                        ) : (
+                            // Display Mode
+                            <div className="space-y-3">
+                                <div className="flex items-start space-x-4">
+                                    <Checkbox
+                                        checked={todo.completed}
+                                        onCheckedChange={() => !isQueuedTodo(todo) && handleToggle(todo as Todo)}
+                                        disabled={updateMutation.isPending || isQueuedTodo(todo)}
+                                        className="mt-1"
+                                    />
+                                    <div className="flex-1">
+                                        <h3 className={`font-medium ${todo.completed ? 'text-muted-foreground line-through' : ''}`}>{todo.title}</h3>
+                                        {todo.description && (
+                                            <p
+                                                className={`text-sm ${todo.completed ? 'text-muted-foreground line-through' : 'text-muted-foreground'}`}
+                                            >
+                                                {todo.description}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => !isQueuedTodo(todo) && handleEditTodo(todo as Todo)}
+                                            disabled={isQueuedTodo(todo)}
+                                        >
+                                            Edit
+                                        </Button>
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => handleDelete(todo.id.toString())}
+                                            disabled={deleteMutation.isPending || isQueuedTodo(todo)}
+                                        >
+                                            Delete
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* Display Images */}
+                                {todo.image_urls && todo.image_urls.length > 0 && (
+                                    <ImageGallery images={todo.image_urls} primaryImage={todo.primary_image_url || undefined} readOnly={true} />
+                                )}
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+            {allTodos.length === 0 && !todosQuery.isLoading && (
+                <div className="py-12 text-center text-muted-foreground">No todos yet. Create your first todo above!</div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 }

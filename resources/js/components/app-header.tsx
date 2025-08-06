@@ -1,4 +1,3 @@
-
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Icon } from '@/components/icon';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -48,7 +47,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     // TODO: Replace with proper auth context or state management
     // const { auth } = page.props;
     const getInitials = useInitials();
-    
+
     // Temporary mock data - replace with actual auth state
     const auth = {
         user: {
@@ -59,7 +58,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
             email_verified_at: null,
             created_at: '2024-01-01T00:00:00.000000Z',
             updated_at: '2024-01-01T00:00:00.000000Z',
-        }
+        },
     };
     return (
         <>
