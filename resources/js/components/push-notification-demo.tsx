@@ -53,40 +53,6 @@ export function PushNotificationDemo() {
         }
     };
 
-    const handleResetSubscription = async () => {
-        setLoading(true);
-        try {
-            // Force unsubscribe first
-            await PushNotificationManager.unsubscribe();
-            
-            // Clear any cached subscription
-            if ('serviceWorker' in navigator) {
-                const registration = await navigator.serviceWorker.ready;
-                const subscription = await registration.pushManager.getSubscription();
-                if (subscription) {
-                    await subscription.unsubscribe();
-                    console.log('Browser subscription cleared');
-                }
-            }
-            
-            // Wait a moment then resubscribe with fresh keys
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            const success = await PushNotificationManager.initialize();
-            if (success) {
-                setIsSubscribed(true);
-                setPermission('granted');
-                console.log('Successfully reset and resubscribed to push notifications');
-                alert('Subscription reset! Try the background notification again.');
-            }
-        } catch (error) {
-            console.error('Failed to reset push subscription:', error);
-            alert(`Failed to reset subscription: ${error.message}`);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleTestPush = async () => {
         setLoading(true);
         try {
@@ -117,36 +83,14 @@ export function PushNotificationDemo() {
     const handleDebugServiceWorker = async () => {
         if ('serviceWorker' in navigator) {
             const registration = await navigator.serviceWorker.ready;
-            
-            // Check current push subscription details
-            const currentSubscription = await registration.pushManager.getSubscription();
-            
             console.log('Service Worker Debug Info:', {
                 active: !!registration.active,
                 installing: !!registration.installing,
                 waiting: !!registration.waiting,
                 scope: registration.scope,
                 pushManager: !!registration.pushManager,
-                showNotification: typeof registration.showNotification,
-                currentSubscription: currentSubscription ? {
-                    endpoint: currentSubscription.endpoint,
-                    keys: currentSubscription.toJSON().keys
-                } : null
+                showNotification: typeof registration.showNotification
             });
-            
-            // Get VAPID key from server and compare
-            try {
-                const response = await fetch('/api/push/vapid-key', { credentials: 'include' });
-                const { vapid_public_key } = await response.json();
-                console.log('Server VAPID key:', vapid_public_key);
-                
-                if (currentSubscription) {
-                    console.log('Current subscription endpoint:', currentSubscription.endpoint);
-                    console.log('Subscription created with this app server key');
-                }
-            } catch (error) {
-                console.error('Failed to fetch VAPID key:', error);
-            }
             
             // Test service worker notification directly
             try {
@@ -156,6 +100,7 @@ export function PushNotificationDemo() {
                     tag: 'sw-direct-test'
                 });
                 console.log('Direct service worker notification sent');
+                alert('Direct SW notification should have appeared!');
             } catch (error) {
                 console.error('Direct SW notification failed:', error);
                 alert(`Direct SW notification failed: ${error.message}`);
@@ -242,13 +187,6 @@ export function PushNotificationDemo() {
                             className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
                         >
                             Debug Service Worker
-                        </button>
-                        <button
-                            onClick={handleResetSubscription}
-                            disabled={loading}
-                            className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50"
-                        >
-                            {loading ? 'Resetting...' : 'Reset Subscription'}
                         </button>
                     </>
                 )}
