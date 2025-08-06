@@ -2,10 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { profileApi } from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";  
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import React, { useState } from "react";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/profile")({
   component: ProfileComponent,
@@ -50,13 +51,13 @@ function ProfileComponent() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.password && formData.password !== formData.password_confirmation) {
       toast.error('Passwords do not match');
       return;
     }
 
-    const updateData: any = {
+    const updateData: { name: string; email: string; password?: string; password_confirmation?: string } = {
       name: formData.name,
       email: formData.email,
     };

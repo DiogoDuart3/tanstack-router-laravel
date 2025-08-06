@@ -11,18 +11,13 @@ import { Send, Shield, MessageCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { TypingIndicator } from "@/components/typing-indicator";
 import echo from "@/lib/echo";
+import type { ChatMessage, AdminMessageSentEvent, AdminUserTypingEvent, ChatRecentResponse } from "@/types";
 
 export const Route = createFileRoute("/admin-chat")({
   component: AdminChatComponent,
 });
 
-interface AdminChatMessage {
-  id: number;
-  message: string;
-  display_name: string;
-  sent_at: string;
-  is_own: boolean;
-}
+type AdminChatMessage = ChatMessage;
 
 function AdminChatComponent() {
   const queryClient = useQueryClient();
@@ -56,8 +51,8 @@ function AdminChatComponent() {
   const { data: messagesData, isLoading } = useQuery({
     queryKey: ['admin-chat', 'recent'],
     queryFn: adminChatApi.getRecent,
-    enabled: isAuthenticated && isAdmin,
-  });
+    enabled: Boolean(isAuthenticated && isAdmin),
+  }) as { data: ChatRecentResponse | undefined; isLoading: boolean };
 
   // Send message mutation
   const sendMessageMutation = useMutation({
@@ -79,8 +74,8 @@ function AdminChatComponent() {
 
     const channel = echo.channel('admin-chat');
 
-    channel.listen('AdminMessageSent', (e: any) => {
-      queryClient.setQueryData(['admin-chat', 'recent'], (oldData: any) => {
+    channel.listen('AdminMessageSent', (e: AdminMessageSentEvent) => {
+      queryClient.setQueryData(['admin-chat', 'recent'], (oldData: ChatRecentResponse | undefined) => {
         if (!oldData) return { messages: [e.message] };
         return {
           ...oldData,
@@ -100,7 +95,7 @@ function AdminChatComponent() {
 
     const channel = echo.channel('admin-chat-typing');
 
-    channel.listen('AdminUserTyping', (e: any) => {
+    channel.listen('AdminUserTyping', (e: AdminUserTypingEvent) => {
       const { user, is_typing } = e;
       const currentUser = userData?.user?.name;
 

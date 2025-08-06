@@ -10,7 +10,23 @@ import { ImageGallery } from "@/components/image-gallery";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { offlineQueue } from "@/lib/offlineQueue";
-import type { Todo } from "@/types";
+import type { Todo, QueuedTodo } from "@/types";
+
+// Type for queued todos in display format
+type QueuedTodoDisplay = {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+  created_at: string;
+  updated_at: string;
+  image_urls: string[];
+  primary_image_url: null;
+  isPending: true;
+};
+
+// Union type for all todos
+type TodoDisplay = Todo | QueuedTodoDisplay;
 import { Wifi, WifiOff, Clock, CloudOff } from "lucide-react";
 
 export const Route = createFileRoute("/todos")({
@@ -33,7 +49,7 @@ function TodosComponent() {
   const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [queueStatus, setQueueStatus] = useState({ createCount: 0, updateCount: 0, isOnline: true });
-  const [queuedTodos, setQueuedTodos] = useState<any[]>([]);
+  const [queuedTodos, setQueuedTodos] = useState<QueuedTodo[]>([]);
   const queryClient = useQueryClient();
 
   // Network status detection
@@ -205,7 +221,7 @@ function TodosComponent() {
   };
 
   const todos = todosQuery.data?.todos || [];
-  
+
   // Convert queued todos to display format
   const queuedTodosForDisplay = queuedTodos.map(queuedTodo => ({
     id: queuedTodo.id,
@@ -220,7 +236,12 @@ function TodosComponent() {
   }));
 
   // Combine regular todos with queued todos
-  const allTodos = [...queuedTodosForDisplay, ...todos];
+  const allTodos = [...queuedTodosForDisplay, ...todos] as TodoDisplay[];
+
+  // Type guard to check if todo is a queued todo
+  const isQueuedTodo = (todo: TodoDisplay): todo is QueuedTodoDisplay => {
+    return 'isPending' in todo && todo.isPending === true;
+  };
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-6">
@@ -230,7 +251,7 @@ function TodosComponent() {
             <h1 className="text-2xl font-bold">Todos</h1>
             <p className="text-muted-foreground">Manage your tasks</p>
           </div>
-          
+
           {/* Network Status Indicator */}
           <div className="flex items-center gap-4">
             {(queueStatus.createCount > 0 || queueStatus.updateCount > 0) && (
@@ -241,10 +262,10 @@ function TodosComponent() {
                 </span>
               </div>
             )}
-            
+
             <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-              isOnline 
-                ? 'bg-green-100 dark:bg-green-900/20' 
+              isOnline
+                ? 'bg-green-100 dark:bg-green-900/20'
                 : 'bg-red-100 dark:bg-red-900/20'
             }`}>
               {isOnline ? (
@@ -253,8 +274,8 @@ function TodosComponent() {
                 <WifiOff className="h-4 w-4 text-red-600 dark:text-red-400" />
               )}
               <span className={`text-sm ${
-                isOnline 
-                  ? 'text-green-700 dark:text-green-300' 
+                isOnline
+                  ? 'text-green-700 dark:text-green-300'
                   : 'text-red-700 dark:text-red-300'
               }`}>
                 {isOnline ? 'Online' : 'Offline'}
@@ -319,15 +340,15 @@ function TodosComponent() {
       )}
 
       <div className="space-y-6">
-        {allTodos.map((todo: any) => (
-          <div key={todo.id} className={`border rounded-lg p-4 ${todo.isPending ? 'border-orange-300 bg-orange-50 dark:bg-orange-950/20' : ''}`}>
-            {todo.isPending && (
+        {allTodos.map((todo) => (
+          <div key={todo.id} className={`border rounded-lg p-4 ${isQueuedTodo(todo) ? 'border-orange-300 bg-orange-50 dark:bg-orange-950/20' : ''}`}>
+            {isQueuedTodo(todo) && (
               <div className="flex items-center gap-2 mb-3 text-orange-600 dark:text-orange-400">
                 <CloudOff className="h-4 w-4" />
                 <span className="text-sm font-medium">Pending sync</span>
               </div>
             )}
-            {editingTodo?.id === todo.id && !todo.isPending ? (
+            {editingTodo?.id === todo.id && !isQueuedTodo(todo) ? (
               // Edit Form
               <form onSubmit={handleUpdateTodo} className="space-y-4">
                 <div>
@@ -359,7 +380,7 @@ function TodosComponent() {
                     <label className="block text-sm font-medium mb-2">Current Images</label>
                     <ImageGallery
                       images={todo.image_urls.filter((url: string) => !imagesToRemove.includes(url.split('/storage/')[1]))}
-                      primaryImage={todo.primary_image_url}
+                      primaryImage={todo.primary_image_url || undefined}
                       onRemoveImage={handleRemoveExistingImage}
                     />
                   </div>
@@ -398,8 +419,8 @@ function TodosComponent() {
                 <div className="flex items-start space-x-4">
                   <Checkbox
                     checked={todo.completed}
-                    onCheckedChange={() => handleToggle(todo)}
-                    disabled={updateMutation.isPending || todo.isPending}
+                    onCheckedChange={() => !isQueuedTodo(todo) && handleToggle(todo as Todo)}
+                    disabled={updateMutation.isPending || isQueuedTodo(todo)}
                     className="mt-1"
                   />
                   <div className="flex-1">
@@ -416,8 +437,8 @@ function TodosComponent() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleEditTodo(todo)}
-                      disabled={todo.isPending}
+                      onClick={() => !isQueuedTodo(todo) && handleEditTodo(todo as Todo)}
+                      disabled={isQueuedTodo(todo)}
                     >
                       Edit
                     </Button>
@@ -425,7 +446,7 @@ function TodosComponent() {
                       variant="destructive"
                       size="sm"
                       onClick={() => handleDelete(todo.id.toString())}
-                      disabled={deleteMutation.isPending || todo.isPending}
+                      disabled={deleteMutation.isPending || isQueuedTodo(todo)}
                     >
                       Delete
                     </Button>
@@ -436,7 +457,7 @@ function TodosComponent() {
                 {todo.image_urls && todo.image_urls.length > 0 && (
                   <ImageGallery
                     images={todo.image_urls}
-                    primaryImage={todo.primary_image_url}
+                    primaryImage={todo.primary_image_url || undefined}
                     readOnly={true}
                   />
                 )}

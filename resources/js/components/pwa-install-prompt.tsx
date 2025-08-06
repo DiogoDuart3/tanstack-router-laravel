@@ -1,9 +1,14 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, X, CheckCircle } from "lucide-react";
+import { Download, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
 
 interface PWAInstallPromptProps {
   onDismiss?: () => void;
@@ -11,7 +16,7 @@ interface PWAInstallPromptProps {
 }
 
 export default function PWAInstallPrompt({ onDismiss, variant = "banner" }: PWAInstallPromptProps) {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
@@ -22,7 +27,7 @@ export default function PWAInstallPrompt({ onDismiss, variant = "banner" }: PWAI
 
     // Check if app is installed via other methods
     if ('getInstalledRelatedApps' in navigator) {
-      (navigator as any).getInstalledRelatedApps().then((relatedApps: any[]) => {
+      (navigator as Navigator & { getInstalledRelatedApps(): Promise<unknown[]> }).getInstalledRelatedApps().then((relatedApps: unknown[]) => {
         setIsInstalled(relatedApps.length > 0);
       });
     }
@@ -30,7 +35,7 @@ export default function PWAInstallPrompt({ onDismiss, variant = "banner" }: PWAI
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowPrompt(true);
     };
 

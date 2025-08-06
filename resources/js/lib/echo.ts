@@ -2,6 +2,7 @@ import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
 // Make Pusher globally available for Laravel Echo
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).Pusher = Pusher;
 
 const echo = new Echo({

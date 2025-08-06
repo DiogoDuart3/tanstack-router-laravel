@@ -1,6 +1,5 @@
 
 import { useForm } from '@tanstack/react-form';
-import { useRouter } from '@tanstack/react-router';
 import { FormEventHandler, useRef } from 'react';
 
 import InputError from '@/components/input-error';
@@ -14,7 +13,6 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 
 export default function DeleteUser() {
     const passwordInput = useRef<HTMLInputElement>(null);
-    const router = useRouter();
     const form = useForm({
         defaultValues: {
             password: ''

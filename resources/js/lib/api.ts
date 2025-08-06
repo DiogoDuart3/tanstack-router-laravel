@@ -1,4 +1,18 @@
 import { QueryClient } from '@tanstack/react-query';
+import type {
+  AuthResponse,
+  TodosResponse,
+  TodoResponse,
+  MessageResponse,
+  ChatMessagesResponse,
+  ChatRecentResponse,
+  ChatMessageResponse,
+  TypingResponse,
+  DashboardResponse,
+  HealthResponse,
+  User,
+  Todo
+} from '../types';
 
 const API_BASE_URL = '/api';
 
@@ -47,7 +61,7 @@ async function apiRequest<T>(
 // Form data request function for file uploads
 async function apiRequestFormData<T>(
   endpoint: string,
-  data: Record<string, any>
+  data: Record<string, unknown>
 ): Promise<T> {
   const token = localStorage.getItem('auth_token');
 
@@ -58,29 +72,29 @@ async function apiRequestFormData<T>(
     if (key === 'images') {
       // Handle multiple images
       if (Array.isArray(data[key])) {
-        data[key].forEach((file: File) => {
+        (data[key] as File[]).forEach((file: File) => {
           formData.append('images[]', file);
         });
       }
     } else if (key === 'remove_images') {
       // Handle image removal
       if (Array.isArray(data[key])) {
-        data[key].forEach((imagePath: string) => {
+        (data[key] as string[]).forEach((imagePath: string) => {
           formData.append('remove_images[]', imagePath);
         });
       }
     } else if (data[key] !== undefined && data[key] !== null) {
       // Handle boolean values properly
       if (typeof data[key] === 'boolean') {
-        formData.append(key, data[key] ? '1' : '0');
+        formData.append(key, (data[key] as boolean) ? '1' : '0');
       } else {
-        formData.append(key, data[key].toString());
+        formData.append(key, (data[key] as string | number).toString());
       }
     }
   });
 
   const config: RequestInit = {
-    method: data.method || 'POST',
+    method: (data.method as string) || 'POST',
     headers: {
       'Accept': 'application/json',
       'X-Requested-With': 'XMLHttpRequest',
@@ -114,34 +128,34 @@ async function apiRequestFormData<T>(
 // Auth API
 export const authApi = {
   register: (data: { name: string; email: string; password: string; password_confirmation: string }) =>
-    apiRequest<{ user: any; token: string }>('/auth/register', {
+    apiRequest<AuthResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   login: (data: { email: string; password: string }) =>
-    apiRequest<{ user: any; token: string }>('/auth/login', {
+    apiRequest<AuthResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   logout: () =>
-    apiRequest<{ message: string }>('/auth/logout', {
+    apiRequest<MessageResponse>('/auth/logout', {
       method: 'POST',
     }),
 
   getUser: () =>
-    apiRequest<{ user: any }>('/auth/user'),
+    apiRequest<{ user: User }>('/auth/user'),
 };
 
 // Todos API
 export const todosApi = {
   getAll: () =>
-    apiRequest<{ todos: any[] }>('/todos'),
+    apiRequest<TodosResponse>('/todos'),
 
   create: (data: { title: string; description?: string; completed?: boolean; images?: File[] }) => {
     if (data.images && data.images.length > 0) {
-      return apiRequestFormData<{ todo: any }>('/todos', {
+      return apiRequestFormData<TodoResponse>('/todos', {
         method: 'POST',
         title: data.title,
         description: data.description || '',
@@ -149,7 +163,7 @@ export const todosApi = {
         images: data.images,
       });
     } else {
-      return apiRequest<{ todo: any }>('/todos', {
+      return apiRequest<TodoResponse>('/todos', {
         method: 'POST',
         body: JSON.stringify({
           title: data.title,
@@ -162,7 +176,7 @@ export const todosApi = {
 
   update: (id: string, data: { title: string; description?: string; completed?: boolean; images?: File[]; remove_images?: string[] }) => {
     if ((data.images && data.images.length > 0) || (data.remove_images && data.remove_images.length > 0)) {
-      return apiRequestFormData<{ todo: any }>(`/todos/${id}`, {
+      return apiRequestFormData<TodoResponse>(`/todos/${id}`, {
         method: 'PUT',
         title: data.title,
         description: data.description || '',
@@ -171,7 +185,7 @@ export const todosApi = {
         remove_images: data.remove_images || [],
       });
     } else {
-      return apiRequest<{ todo: any }>(`/todos/${id}`, {
+      return apiRequest<TodoResponse>(`/todos/${id}`, {
         method: 'PUT',
         body: JSON.stringify({
           title: data.title,
@@ -183,12 +197,12 @@ export const todosApi = {
   },
 
   delete: (id: string) =>
-    apiRequest<{ message: string }>(`/todos/${id}`, {
+    apiRequest<MessageResponse>(`/todos/${id}`, {
       method: 'DELETE',
     }),
 
-  sync: (todos: any[]) =>
-    apiRequest<{ synced_todos: any[]; all_todos: any[] }>('/todos/sync', {
+  sync: (todos: Todo[]) =>
+    apiRequest<{ synced_todos: Todo[]; all_todos: Todo[] }>('/todos/sync', {
       method: 'POST',
       body: JSON.stringify({ todos }),
     }),
@@ -197,16 +211,16 @@ export const todosApi = {
 // Dashboard API
 export const dashboardApi = {
   getData: () =>
-    apiRequest<{ user: any; stats: any; recent_activity: any[] }>('/dashboard'),
+    apiRequest<DashboardResponse>('/dashboard'),
 };
 
 // Profile API
 export const profileApi = {
   get: () =>
-    apiRequest<{ user: any }>('/profile'),
+    apiRequest<{ user: User }>('/profile'),
 
   update: (data: { name: string; email: string; password?: string; password_confirmation?: string }) =>
-    apiRequest<{ user: any }>('/profile', {
+    apiRequest<{ user: User }>('/profile', {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
@@ -215,19 +229,19 @@ export const profileApi = {
 // Chat API
 export const chatApi = {
   getMessages: (params?: { limit?: number; before_id?: number }) =>
-    apiRequest<{ messages: any[]; has_more: boolean }>('/chat' + (params ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString() : '')),
+    apiRequest<ChatMessagesResponse>('/chat' + (params ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString() : '')),
 
   getRecent: () =>
-    apiRequest<{ messages: any[] }>('/chat/recent'),
+    apiRequest<ChatRecentResponse>('/chat/recent'),
 
   sendMessage: (data: { message: string; username?: string }) =>
-    apiRequest<{ message: any }>('/chat', {
+    apiRequest<ChatMessageResponse>('/chat', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   sendTyping: (data: { is_typing: boolean; username?: string }) =>
-    apiRequest<{ status: string }>('/chat/typing', {
+    apiRequest<TypingResponse>('/chat/typing', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -236,19 +250,19 @@ export const chatApi = {
 // Admin Chat API
 export const adminChatApi = {
   getMessages: (params?: { limit?: number; before_id?: number }) =>
-    apiRequest<{ messages: any[]; has_more: boolean }>('/admin/chat' + (params ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString() : '')),
+    apiRequest<ChatMessagesResponse>('/admin/chat' + (params ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString() : '')),
 
   getRecent: () =>
-    apiRequest<{ messages: any[] }>('/admin/chat/recent'),
+    apiRequest<ChatRecentResponse>('/admin/chat/recent'),
 
   sendMessage: (data: { message: string }) =>
-    apiRequest<{ message: any }>('/admin/chat', {
+    apiRequest<ChatMessageResponse>('/admin/chat', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   sendTyping: (data: { is_typing: boolean }) =>
-    apiRequest<{ status: string }>('/admin/chat/typing', {
+    apiRequest<TypingResponse>('/admin/chat/typing', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -257,7 +271,7 @@ export const adminChatApi = {
 // Health check
 export const healthApi = {
   check: () =>
-    apiRequest<{ status: string; timestamp: string; request_time_ms: number }>('/health'),
+    apiRequest<HealthResponse>('/health'),
 };
 
 export const queryClient = new QueryClient({

@@ -11,18 +11,11 @@ import { Send, MessageCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { TypingIndicator } from "@/components/typing-indicator";
 import echo from "@/lib/echo";
+import type { ChatMessage, MessageSentEvent, UserTypingEvent, ChatRecentResponse } from "@/types";
 
 export const Route = createFileRoute("/chat")({
   component: ChatComponent,
 });
-
-interface ChatMessage {
-  id: number;
-  message: string;
-  display_name: string;
-  sent_at: string;
-  is_own: boolean;
-}
 
 function ChatComponent() {
   const queryClient = useQueryClient();
@@ -71,9 +64,9 @@ function ChatComponent() {
   useEffect(() => {
     const channel = echo.channel('public-chat');
 
-    channel.listen('MessageSent', (e: any) => {
+    channel.listen('MessageSent', (e: MessageSentEvent) => {
       // Add new message to the cache
-      queryClient.setQueryData(['chat', 'recent'], (oldData: any) => {
+      queryClient.setQueryData(['chat', 'recent'], (oldData: ChatRecentResponse | undefined) => {
         if (!oldData) return { messages: [e.message] };
         return {
           ...oldData,
@@ -91,7 +84,7 @@ function ChatComponent() {
   useEffect(() => {
     const channel = echo.channel('public-chat-typing');
 
-    channel.listen('UserTyping', (e: any) => {
+    channel.listen('UserTyping', (e: UserTypingEvent) => {
       const { user, is_typing } = e;
       const currentUser = userData?.user?.name ?? username ?? 'Anonymous';
 

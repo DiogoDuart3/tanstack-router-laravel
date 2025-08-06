@@ -17,7 +17,7 @@ export interface QueuedAction {
   id: string;
   type: 'create' | 'update' | 'delete';
   todoId: string;
-  data?: any;
+  data?: unknown;
   retryCount: number;
   lastAttempt?: number;
 }
@@ -193,11 +193,12 @@ export function useOfflineSync() {
   const syncAction = async (action: QueuedAction) => {
     try {
       switch (action.type) {
-        case 'create':
+        case 'create': {
+          const createData = action.data as { text: string; image?: File };
           const formData = new FormData();
-          formData.append('text', action.data.text);
-          if (action.data.image) {
-            formData.append('image', action.data.image);
+          formData.append('text', createData.text);
+          if (createData.image) {
+            formData.append('image', createData.image);
           }
 
           const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/todos/create-with-image`, {
@@ -220,6 +221,7 @@ export function useOfflineSync() {
             throw new Error('Failed to create todo');
           }
           break;
+        }
 
         // Add other sync cases here...
       }

@@ -1,27 +1,4 @@
-interface QueuedTodo {
-  id: string;
-  data: {
-    title: string;
-    description?: string;
-    images?: File[];
-  };
-  timestamp: number;
-  retryCount: number;
-}
-
-interface QueuedUpdate {
-  id: string;
-  todoId: string;
-  data: {
-    title: string;
-    description?: string;
-    completed?: boolean;
-    images?: File[];
-    remove_images?: string[];
-  };
-  timestamp: number;
-  retryCount: number;
-}
+import type { QueuedTodo, QueuedUpdate } from '../types';
 
 class OfflineQueue {
   private createQueue: QueuedTodo[] = [];
@@ -32,7 +9,7 @@ class OfflineQueue {
   constructor() {
     // Load queues from localStorage on initialization
     this.loadFromStorage();
-    
+
     // Listen for online events
     window.addEventListener('online', () => {
       this.processQueue();
@@ -72,7 +49,7 @@ class OfflineQueue {
 
       localStorage.setItem('todoOfflineCreateQueue', JSON.stringify(createQueueForStorage));
       localStorage.setItem('todoOfflineUpdateQueue', JSON.stringify(updateQueueForStorage));
-      
+
       // Store images separately as base64
       this.storeImagesInStorage();
     } catch (error) {
@@ -82,7 +59,7 @@ class OfflineQueue {
 
   private async storeImagesInStorage() {
     const imagePromises: Promise<void>[] = [];
-    
+
     // Process create queue images
     this.createQueue.forEach((item, index) => {
       if (item.data.images) {
@@ -138,12 +115,12 @@ class OfflineQueue {
       if (createQueueData) {
         const parsedCreateQueue = JSON.parse(createQueueData);
         this.createQueue = await Promise.all(
-          parsedCreateQueue.map(async (item: any) => ({
+          parsedCreateQueue.map(async (item: QueuedTodo) => ({
             ...item,
             data: {
               ...item.data,
               images: item.data.images ? await Promise.all(
-                item.data.images.map(async (imgData: any, index: number) => {
+                item.data.images.map(async (imgData: { name: string; type: string; size: number; lastModified: number }, index: number) => {
                   const base64 = localStorage.getItem(`offline_image_create_${parsedCreateQueue.indexOf(item)}_${index}`);
                   if (base64) {
                     return this.base64ToFile(base64, imgData.name, imgData.type);
@@ -159,12 +136,12 @@ class OfflineQueue {
       if (updateQueueData) {
         const parsedUpdateQueue = JSON.parse(updateQueueData);
         this.updateQueue = await Promise.all(
-          parsedUpdateQueue.map(async (item: any) => ({
+          parsedUpdateQueue.map(async (item: QueuedUpdate) => ({
             ...item,
             data: {
               ...item.data,
               images: item.data.images ? await Promise.all(
-                item.data.images.map(async (imgData: any, index: number) => {
+                item.data.images.map(async (imgData: { name: string; type: string; size: number; lastModified: number }, index: number) => {
                   const base64 = localStorage.getItem(`offline_image_update_${parsedUpdateQueue.indexOf(item)}_${index}`);
                   if (base64) {
                     return this.base64ToFile(base64, imgData.name, imgData.type);
@@ -232,7 +209,7 @@ class OfflineQueue {
     try {
       // Process create queue
       await this.processCreateQueue();
-      
+
       // Process update queue
       await this.processUpdateQueue();
     } finally {
@@ -246,11 +223,11 @@ class OfflineQueue {
 
     for (let i = 0; i < this.createQueue.length; i++) {
       const queuedTodo = this.createQueue[i];
-      
+
       try {
         await todosApi.create(queuedTodo.data);
         toRemove.push(i);
-        
+
         // Clean up stored images
         if (queuedTodo.data.images) {
           queuedTodo.data.images.forEach((_, fileIndex) => {
@@ -260,11 +237,11 @@ class OfflineQueue {
       } catch (error) {
         console.error('Failed to sync queued todo:', error);
         queuedTodo.retryCount++;
-        
+
         if (queuedTodo.retryCount >= this.maxRetries) {
           console.warn(`Removing todo from queue after ${this.maxRetries} retries:`, queuedTodo);
           toRemove.push(i);
-          
+
           // Clean up stored images for failed items too
           if (queuedTodo.data.images) {
             queuedTodo.data.images.forEach((_, fileIndex) => {
@@ -291,11 +268,11 @@ class OfflineQueue {
 
     for (let i = 0; i < this.updateQueue.length; i++) {
       const queuedUpdate = this.updateQueue[i];
-      
+
       try {
         await todosApi.update(queuedUpdate.todoId, queuedUpdate.data);
         toRemove.push(i);
-        
+
         // Clean up stored images
         if (queuedUpdate.data.images) {
           queuedUpdate.data.images.forEach((_, fileIndex) => {
@@ -305,11 +282,11 @@ class OfflineQueue {
       } catch (error) {
         console.error('Failed to sync queued update:', error);
         queuedUpdate.retryCount++;
-        
+
         if (queuedUpdate.retryCount >= this.maxRetries) {
           console.warn(`Removing update from queue after ${this.maxRetries} retries:`, queuedUpdate);
           toRemove.push(i);
-          
+
           // Clean up stored images for failed items too
           if (queuedUpdate.data.images) {
             queuedUpdate.data.images.forEach((_, fileIndex) => {
