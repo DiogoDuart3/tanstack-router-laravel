@@ -61,10 +61,12 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Background sync for queued actions
+// Background sync for queued actions and notifications
 self.addEventListener('sync', (event) => {
   if (event.tag === 'background-sync-todos') {
     event.waitUntil(doBackgroundSync());
+  } else if (event.tag === 'background-sync-notifications') {
+    event.waitUntil(doBackgroundNotificationSync());
   }
 });
 
@@ -144,6 +146,63 @@ async function doBackgroundSync() {
 
   } catch (error) {
     console.error('Background sync failed:', error);
+  }
+}
+
+async function doBackgroundNotificationSync() {
+  console.log('🔄 SW: Background notification sync triggered');
+  
+  try {
+    // Fetch pending notifications from server
+    const response = await fetch('/api/notifications/pending', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+
+    if (!response.ok) {
+      console.log('🔄 SW: No pending notifications or fetch failed');
+      return;
+    }
+
+    const data = await response.json();
+    console.log('🔄 SW: Fetched pending notifications:', data);
+
+    if (data.notifications && data.notifications.length > 0) {
+      for (const notification of data.notifications) {
+        try {
+          await self.registration.showNotification(notification.title || 'New Notification', {
+            body: notification.body || 'You have a new notification',
+            icon: '/favicon.ico',
+            tag: `sync-notification-${notification.id || Date.now()}`,
+            data: notification.data || {}
+          });
+          console.log('✅ SW: Background sync notification shown:', notification.title);
+        } catch (error) {
+          console.error('❌ SW: Failed to show background sync notification:', error);
+        }
+      }
+      
+      // Mark notifications as delivered
+      await fetch('/api/notifications/mark-delivered', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          notification_ids: data.notifications.map(n => n.id).filter(Boolean)
+        })
+      });
+    }
+
+  } catch (error) {
+    console.error('🔄 SW: Background notification sync failed:', error);
   }
 }
 
