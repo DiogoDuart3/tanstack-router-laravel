@@ -82,7 +82,7 @@ class PushNotificationDemo extends Notification implements ShouldQueue
      */
     public function broadcastOn(): array
     {
-        return ['notifications'];
+        return ['private-notifications'];
     }
 
     /**
