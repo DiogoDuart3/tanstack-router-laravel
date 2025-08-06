@@ -23,8 +23,13 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Make Echo globally available for server notifications
-window.Echo = echo;
+// Make Echo globally available for server notifications (only if created)
+if (echo) {
+    window.Echo = echo;
+    console.log('App: Echo assigned to window');
+} else {
+    console.log('App: Echo is null, skipping global assignment');
+}
 
 // Initialize global server notification service
 ServerNotificationService.initialize();

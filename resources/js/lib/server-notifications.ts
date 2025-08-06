@@ -18,8 +18,8 @@ export class ServerNotificationService {
         
         // Wait for Echo to be available
         const checkEcho = () => {
-            console.log('ServerNotificationService: Checking for Echo...', !!window.Echo);
-            if (window.Echo) {
+            console.log('ServerNotificationService: Checking for Echo...', !!window.Echo, 'Context:', typeof window, typeof document);
+            if (window.Echo && window.Echo !== null) {
                 console.log('ServerNotificationService: Echo found, setting up listener');
                 this.setupNotificationListener();
                 this.initialized = true;

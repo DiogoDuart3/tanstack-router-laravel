@@ -45,8 +45,10 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
-  // Don't cache the version endpoint - always fetch fresh
-  if (event.request.url.includes('/api/version')) {
+  // Don't intercept these endpoints - let them go directly to network
+  if (event.request.url.includes('/api/version') || 
+      event.request.url.includes('/broadcasting/auth') ||
+      event.request.url.includes('/sanctum/csrf-cookie')) {
     return;
   }
 
