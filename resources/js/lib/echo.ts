@@ -21,12 +21,14 @@ const echo = new Echo({
     wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
     forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
     enabledTransports: ['ws', 'wss'],
-    // CSRF token for authentication
+    // Authentication configuration for Sanctum
     auth: {
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            'Accept': 'application/json',
         },
     },
+    authEndpoint: '/broadcasting/auth',
 });
 
 console.log('Echo: Instance created:', echo);
