@@ -100,8 +100,27 @@ export function PushNotificationDemo() {
                     tag: 'sw-direct-test'
                 });
                 console.log('Direct service worker notification sent');
+                alert('Direct SW notification should have appeared!');
             } catch (error) {
                 console.error('Direct SW notification failed:', error);
+                alert(`Direct SW notification failed: ${error.message}`);
+            }
+            
+            // Test if we can send a message to the service worker
+            try {
+                if (registration.active) {
+                    registration.active.postMessage({
+                        type: 'TEST_PUSH_SIMULATION',
+                        data: {
+                            title: '🧪 Simulated Push Test',
+                            body: 'This simulates a push event without going through the server',
+                            tag: 'simulated-push'
+                        }
+                    });
+                    console.log('Message sent to service worker');
+                }
+            } catch (error) {
+                console.error('Failed to send message to SW:', error);
             }
         }
     };
