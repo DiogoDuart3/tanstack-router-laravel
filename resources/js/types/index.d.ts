@@ -22,6 +22,20 @@ export interface NavItem {
     isActive?: boolean;
 }
 
+export interface Todo {
+    id: number;
+    title: string;
+    description?: string;
+    completed: boolean;
+    user_id: number;
+    images?: string[];
+    primary_image?: string;
+    image_urls?: string[];
+    primary_image_url?: string;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface SharedData {
     name: string;
     quote: { message: string; author: string };

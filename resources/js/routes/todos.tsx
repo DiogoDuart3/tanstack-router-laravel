@@ -9,15 +9,24 @@ import { ImageUpload } from "@/components/image-upload";
 import { ImageGallery } from "@/components/image-gallery";
 import { useState } from "react";
 import { toast } from "sonner";
+import type { Todo } from "@/types";
 
 export const Route = createFileRoute("/todos")({
   component: TodosComponent,
 });
 
+interface UpdateTodoData {
+  title: string;
+  description?: string;
+  completed?: boolean;
+  images?: File[];
+  remove_images?: string[];
+}
+
 function TodosComponent() {
   const [newTodo, setNewTodo] = useState({ title: '', description: '' });
   const [newTodoImages, setNewTodoImages] = useState<File[]>([]);
-  const [editingTodo, setEditingTodo] = useState<any>(null);
+  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [editingImages, setEditingImages] = useState<File[]>([]);
   const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
   const queryClient = useQueryClient();
@@ -41,7 +50,7 @@ function TodosComponent() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => todosApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateTodoData }) => todosApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todos'] });
       setEditingTodo(null);
@@ -76,11 +85,12 @@ function TodosComponent() {
     }
   };
 
-  const handleToggle = (todo: any) => {
+  const handleToggle = (todo: Todo) => {
     updateMutation.mutate({
       id: todo.id.toString(),
       data: {
-        ...todo,
+        title: todo.title,
+        description: todo.description,
         completed: !todo.completed,
       },
     });
@@ -92,7 +102,7 @@ function TodosComponent() {
     }
   };
 
-  const handleEditTodo = (todo: any) => {
+  const handleEditTodo = (todo: Todo) => {
     setEditingTodo(todo);
     setEditingImages([]);
     setImagesToRemove([]);
@@ -167,7 +177,7 @@ function TodosComponent() {
       )}
 
       <div className="space-y-6">
-        {todos.map((todo: any) => (
+        {todos.map((todo: Todo) => (
           <div key={todo.id} className="border rounded-lg p-4">
             {editingTodo?.id === todo.id ? (
               // Edit Form
@@ -190,7 +200,7 @@ function TodosComponent() {
                 <div>
                   <Checkbox
                     checked={editingTodo.completed}
-                    onCheckedChange={(checked) => setEditingTodo({ ...editingTodo, completed: checked })}
+                    onCheckedChange={(checked) => setEditingTodo({ ...editingTodo, completed: !!checked })}
                   />
                   <label className="ml-2 text-sm">Completed</label>
                 </div>
