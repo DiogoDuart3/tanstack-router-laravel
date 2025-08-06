@@ -93,26 +93,6 @@ self.addEventListener('message', (event) => {
       });
     });
   }
-  
-  // Handle simulated push test
-  if (event.data && event.data.type === 'TEST_PUSH_SIMULATION') {
-    console.log('🧪 SW: Simulating push notification', event.data.data);
-    const { title, body, tag } = event.data.data;
-    
-    self.registration.showNotification(title, {
-      body: body,
-      icon: '/favicon.ico',
-      badge: '/favicon.ico',
-      tag: tag,
-      requireInteraction: false,
-      silent: false,
-      vibrate: [200, 100, 200],
-    }).then(() => {
-      console.log('✅ SW: Simulated push notification shown');
-    }).catch((error) => {
-      console.error('❌ SW: Simulated push notification failed:', error);
-    });
-  }
 });
 
 async function doBackgroundSync() {
@@ -201,14 +181,10 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-console.log('🚀 Service Worker: Push event listener registered');
-
 // Push notification handler for background notifications
 self.addEventListener('push', (event) => {
-  console.log('🔔 SW Push: PUSH EVENT RECEIVED!', event);
+  console.log('🔔 SW Push: Received push notification', event);
   console.log('🔔 SW Push: Event data exists:', !!event.data);
-  console.log('🔔 SW Push: Event type:', event.type);
-  console.log('🔔 SW Push: Timestamp:', new Date().toISOString());
   
   if (!event.data) {
     console.log('❌ SW Push: No data in push event, showing fallback notification');

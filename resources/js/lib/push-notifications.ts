@@ -256,15 +256,8 @@ export class PushNotificationManager {
             const result = await response.json();
             console.log('PushNotificationManager: ✅ Test notification sent:', result);
             
-            // Check if service worker received the push event
-            setTimeout(() => {
-                console.log('🔍 Checking if service worker received push event...');
-                // This will be visible in the main console if SW logs don't appear in DevTools
-            }, 2000);
-            
             // Show alert with the response for debugging
-            alert(`Push notification sent! Response: ${JSON.stringify(result, null, 2)}\n\nCheck DevTools → Application → Service Workers for logs starting with "🔔 SW Push"`);
-            
+            alert(`Push notification sent! Response: ${JSON.stringify(result, null, 2)}`);
             
         } catch (error) {
             console.error('PushNotificationManager: ❌ Failed to send test notification:', error);
