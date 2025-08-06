@@ -319,11 +319,12 @@ class NotificationController extends Controller
 
             $payload = json_encode([
                 'title' => '🧪 Test Push Notification',
-                'body' => 'This is a test push notification sent in the background!',
+                'body' => 'This is a test push notification sent in the background! Time: ' . now()->format('H:i:s'),
                 'icon' => '/favicon.ico',
-                'tag' => 'test-push',
-                'requireInteraction' => false,
+                'tag' => 'test-push-' . time(), // Unique tag to prevent grouping
+                'requireInteraction' => true, // Force notification to stay visible
                 'vibrate' => [200, 100, 200],
+                'timestamp' => time() * 1000,
             ]);
 
             $results = [];
