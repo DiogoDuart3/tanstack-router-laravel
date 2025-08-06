@@ -26,7 +26,12 @@ Broadcast::channel('admin-chat-typing', function ($user) {
     return $user && $user->isAdmin();
 });
 
-// Notifications channel - authenticated users can listen to their own notifications
-Broadcast::channel('notifications', function ($user) {
-    return $user ? $user : false;
+// Private notifications channel - authenticated users can listen to their own notifications
+Broadcast::channel('private-notifications', function ($user) {
+    return $user !== null;
+});
+
+// User-specific notifications channel
+Broadcast::channel('notifications.{id}', function ($user, $id) {
+    return $user && (int) $user->id === (int) $id;
 });

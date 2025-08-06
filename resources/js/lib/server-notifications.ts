@@ -15,22 +15,33 @@ export class ServerNotificationService {
         }
 
         console.log('ServerNotificationService: Initializing...');
-        
-        // Wait for Echo to be available
-        const checkEcho = () => {
-            console.log('ServerNotificationService: Checking for Echo...', !!window.Echo, 'Context:', typeof window, typeof document);
+
+        // Wait for both Echo AND user authentication to be available
+        const checkEchoAndAuth = async () => {
+            console.log('ServerNotificationService: Checking for Echo and auth...', !!window.Echo, 'Context:', typeof window, typeof document);
+
             if (window.Echo && window.Echo !== null) {
-                console.log('ServerNotificationService: Echo found, setting up listener');
-                this.setupNotificationListener();
-                this.initialized = true;
-                console.log('ServerNotificationService: ✅ Initialized with Echo');
+                console.log('ServerNotificationService: Echo found, checking authentication...');
+
+                // Check if user is authenticated before setting up WebSocket
+                const isAuthenticated = await this.checkAuthentication();
+
+                if (isAuthenticated) {
+                    console.log('ServerNotificationService: User authenticated, setting up listener');
+                    this.setupNotificationListener();
+                    this.initialized = true;
+                    console.log('ServerNotificationService: ✅ Initialized with Echo and auth');
+                } else {
+                    console.log('ServerNotificationService: User not authenticated, retrying in 2 seconds...');
+                    setTimeout(checkEchoAndAuth, 2000);
+                }
             } else {
                 console.log('ServerNotificationService: Echo not available, retrying in 1 second...');
-                setTimeout(checkEcho, 1000);
+                setTimeout(checkEchoAndAuth, 1000);
             }
         };
 
-        checkEcho();
+        checkEchoAndAuth();
     }
 
     /**
@@ -45,21 +56,21 @@ export class ServerNotificationService {
         try {
             console.log('ServerNotificationService: Setting up private channel listener...');
             const channel = window.Echo.private('notifications');
-            
+
             // Add connection status logging
             if (window.Echo.connector && window.Echo.connector.pusher) {
                 const pusher = window.Echo.connector.pusher;
                 console.log('ServerNotificationService: Pusher connection state:', pusher.connection.state);
-                
+
                 pusher.connection.bind('connected', () => {
                     console.log('ServerNotificationService: ✅ Pusher connected');
                 });
-                
+
                 pusher.connection.bind('error', (err: any) => {
                     console.error('ServerNotificationService: ❌ Pusher connection error:', err);
                 });
             }
-            
+
             // Listen for notifications
             channel.notification((event: any) => {
                 console.log('ServerNotificationService: 🔔 Global server notification received:', event);
@@ -86,11 +97,11 @@ export class ServerNotificationService {
      */
     private static handleServerNotification(event: any) {
         console.log('ServerNotificationService: 📨 Processing notification event:', event);
-        
+
         if (event.notification) {
             const { title, message, icon, type } = event.notification;
             console.log('ServerNotificationService: 📋 Notification data:', { title, message, icon, type });
-            
+
             // Send to service worker for system notification (works when app is not in focus)
             if (navigator.serviceWorker && navigator.serviceWorker.controller) {
                 console.log('ServerNotificationService: 📤 Sending to service worker...');
@@ -111,7 +122,7 @@ export class ServerNotificationService {
                     hasServiceWorker: !!navigator.serviceWorker,
                     hasController: !!navigator.serviceWorker?.controller
                 });
-                
+
                 // Fallback: try to show browser notification directly (only works when app is in focus)
                 import('./notifications').then(({ NotificationManager }) => {
                     console.log('ServerNotificationService: 📢 Showing fallback notification');
@@ -131,6 +142,30 @@ export class ServerNotificationService {
     }
 
     /**
+     * Check if user is authenticated
+     */
+    private static async checkAuthentication(): Promise<boolean> {
+        try {
+            const token = localStorage.getItem('auth_token');
+            const response = await fetch('/api/auth/user', {
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    ...(token && { Authorization: `Bearer ${token}` }),
+                }
+            });
+
+            console.log('ServerNotificationService: Auth check response:', response.status);
+            return response.ok;
+        } catch (error) {
+            console.error('ServerNotificationService: Auth check failed:', error);
+            return false;
+        }
+    }
+
+    /**
      * Check if the service is initialized
      */
     static isInitialized(): boolean {
@@ -138,11 +173,20 @@ export class ServerNotificationService {
     }
 
     /**
+     * Force re-initialization (useful after user login)
+     */
+    static forceReInitialize() {
+        console.log('ServerNotificationService: Force re-initialization requested');
+        this.initialized = false;
+        this.initialize();
+    }
+
+    /**
      * Test function to manually trigger a service worker notification
      */
     static testServiceWorkerNotification() {
         console.log('ServerNotificationService: 🧪 Testing service worker notification...');
-        
+
         if (navigator.serviceWorker && navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({
                 type: 'SERVER_NOTIFICATION',

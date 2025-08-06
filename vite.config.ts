@@ -30,7 +30,7 @@ const buildInfoPlugin = () => ({
             timestamp: buildTimestamp,
             built_at: new Date(buildTimestamp).toISOString(),
         };
-        
+
         try {
             writeFileSync('public/build.json', JSON.stringify(buildInfo, null, 2));
             console.log('✓ Generated build.json with version:', commitHash.substring(0, 8));
@@ -42,7 +42,8 @@ const buildInfoPlugin = () => ({
 
 export default defineConfig({
     server: {
-        host: 'localhost',
+        host: '0.0.0.0',
+        port: 5173,
         hmr: {
             host: 'localhost',
         },

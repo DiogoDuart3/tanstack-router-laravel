@@ -236,7 +236,7 @@ export default function NotificationDemo() {
 
                     <div className="mt-4 border-t pt-4">
                         <h3 className="mb-2 text-sm font-semibold text-muted-foreground">Server Notifications (Requires Login)</h3>
-                        
+
                         <button
                             onClick={handleServerDemo}
                             disabled={isLoading || !status.isSupported || status.permission !== 'granted'}

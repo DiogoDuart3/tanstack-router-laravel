@@ -8,6 +8,7 @@ import { queryClient } from './lib/api';
 import { routeTree } from './routeTree.gen';
 import echo from './lib/echo';
 import { ServerNotificationService } from './lib/server-notifications';
+import { AuthDebugger } from './lib/debug-auth';
 
 // Register service worker for offline support
 if ('serviceWorker' in navigator) {
@@ -23,19 +24,26 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Make Echo globally available for server notifications (only if created)
-if (echo) {
-    window.Echo = echo;
-    console.log('App: Echo assigned to window');
-} else {
-    console.log('App: Echo is null, skipping global assignment');
-}
+// Delay Echo and notification service initialization to allow authentication to complete
+setTimeout(() => {
+    // Make Echo globally available for server notifications (only if created)
+    if (echo) {
+        window.Echo = echo;
+        console.log('App: Echo assigned to window (delayed)');
+    } else {
+        console.log('App: Echo is null, skipping global assignment');
+    }
 
-// Initialize global server notification service
-ServerNotificationService.initialize();
+    // Initialize global server notification service after delay
+    ServerNotificationService.initialize();
+}, 1000); // 1 second delay to allow auth to complete
 
-// Make test function globally available for debugging
+// Make test functions globally available for debugging
 (window as any).testServerNotification = ServerNotificationService.testServiceWorkerNotification;
+(window as any).reinitNotifications = ServerNotificationService.forceReInitialize;
+
+// Initialize auth debugger
+AuthDebugger.logCurrentState();
 
 const router = createRouter({
     routeTree,

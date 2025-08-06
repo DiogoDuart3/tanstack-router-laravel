@@ -1,6 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\BroadcastAuthController;
+
+// Custom broadcasting authentication route - exclude from CSRF verification
+Route::match(['GET', 'POST'], '/broadcasting/auth', [BroadcastAuthController::class, 'authenticate'])
+    ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
 
 // Serve the TanStack Router SPA for all web routes
 Route::get('/{any}', function () {
