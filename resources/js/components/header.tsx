@@ -13,7 +13,7 @@ export default function Header() {
 
     // Check if user is authenticated
     const userQuery = useQuery({
-        queryKey: ['user'],
+        queryKey: ['auth', 'user'],
         queryFn: authApi.getUser,
         retry: false,
     });
