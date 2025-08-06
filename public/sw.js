@@ -247,20 +247,17 @@ self.addEventListener('push', (event) => {
     return;
   }
 
-  // Create simplified options object to avoid conflicts
   const options = {
     body: data.body || 'You have a new notification',
     icon: data.icon || '/favicon.ico',
     badge: '/favicon.ico',
     tag: data.tag || 'background-notification',
-    requireInteraction: false, // Set to false for now to see if this was causing issues
-    silent: false
+    data: data.data || {},
+    requireInteraction: data.requireInteraction || false,
+    silent: data.silent || false,
+    ...(!(data.silent) && { vibrate: data.vibrate || [200, 100, 200] }), // Only add vibrate if not silent
+    actions: data.actions || []
   };
-
-  // Only add vibrate if not silent (to avoid silent:false + vibrate conflict)
-  if (!data.silent) {
-    options.vibrate = data.vibrate || [200, 100, 200];
-  }
 
   console.log('🚀 SW Push: Showing notification with options:', options);
   console.log('🚀 SW Push: Service worker state:', self.serviceWorker?.state || 'unknown');
@@ -270,7 +267,18 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     (async () => {
       try {
-        console.log('🔥 SW Push: About to show notification...');
+        // Check if we can show notifications
+        const permission = await self.registration.showNotification('Test', { body: 'Checking permission', silent: true, tag: 'permission-check' })
+          .then(() => 'granted')
+          .catch((e) => {
+            console.error('❌ SW Push: Permission check failed:', e);
+            return 'denied';
+          });
+        
+        if (permission === 'denied') {
+          console.error('❌ SW Push: No notification permission');
+          return;
+        }
         
         // Show the actual notification
         await self.registration.showNotification(data.title || 'New Notification', options);
@@ -284,14 +292,13 @@ self.addEventListener('push', (event) => {
           stack: error.stack
         });
         
-        // Try a minimal fallback notification
+        // Try a fallback notification
         try {
-          console.log('🔄 SW Push: Trying minimal fallback notification...');
-          await self.registration.showNotification('Push Test', {
-            body: 'Fallback notification - original failed',
-            tag: 'fallback-' + Date.now()
+          await self.registration.showNotification('Push Notification Error', {
+            body: `Failed to show notification: ${error.message}`,
+            icon: '/favicon.ico',
+            tag: 'error-notification'
           });
-          console.log('✅ SW Push: Fallback notification shown');
         } catch (fallbackError) {
           console.error('❌ SW Push: Even fallback notification failed:', fallbackError);
         }
