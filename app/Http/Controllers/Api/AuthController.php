@@ -57,8 +57,29 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        // Handle logout even if not authenticated (for cleanup purposes)
+        try {
+            $user = $request->user();
+            
+            if ($user && $user->currentAccessToken()) {
+                $user->currentAccessToken()->delete();
+            }
+            
+            // Also try to get user from auth guard if request->user() fails
+            if (!$user && Auth::check()) {
+                $user = Auth::user();
+                if ($user && $user->currentAccessToken()) {
+                    $user->currentAccessToken()->delete();
+                }
+            }
+        } catch (\Exception $e) {
+            // Log the error but don't fail the logout
+            logger()->warning('Logout token deletion failed: ' . $e->getMessage());
+        }
 
+        // Clear the auth session regardless
+        Auth::guard('web')->logout();
+        
         return response()->json(['message' => 'Logged out successfully']);
     }
 

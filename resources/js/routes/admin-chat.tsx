@@ -28,8 +28,8 @@ function AdminChatComponent() {
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Check if user is authenticated and is admin
-    const { data: userData, isLoading: isUserLoading } = useQuery({
+    // Get user data for UI display (non-blocking)  
+    const { data: userData } = useQuery({
         queryKey: ['auth', 'user'],
         queryFn: authApi.getUser,
         retry: false,
@@ -39,18 +39,10 @@ function AdminChatComponent() {
     const isAuthenticated = !!userData?.user;
     const isAdmin = userData?.user?.is_admin;
 
-    // Redirect if not admin
-    useEffect(() => {
-        if (!isUserLoading && (!isAuthenticated || !isAdmin)) {
-            window.location.href = '/dashboard';
-        }
-    }, [isAuthenticated, isAdmin, isUserLoading]);
-
-    // Fetch recent messages
+    // Fetch recent messages (let API handle auth)
     const { data: messagesData, isLoading } = useQuery({
         queryKey: ['admin-chat', 'recent'],
         queryFn: adminChatApi.getRecent,
-        enabled: Boolean(isAuthenticated && isAdmin),
     }) as { data: ChatRecentResponse | undefined; isLoading: boolean };
 
     // Send message mutation
@@ -197,23 +189,11 @@ function AdminChatComponent() {
         });
     };
 
-    // Show loading or redirect if not authorized
-    if (isUserLoading) {
+    // Show loading state
+    if (isLoading) {
         return (
             <div className="container mx-auto flex h-[calc(100vh-80px)] max-w-4xl items-center justify-center px-4 py-2">
-                <div className="text-center">Loading...</div>
-            </div>
-        );
-    }
-
-    if (!isAuthenticated || !isAdmin) {
-        return (
-            <div className="container mx-auto flex h-[calc(100vh-80px)] max-w-4xl items-center justify-center px-4 py-2">
-                <div className="text-center">
-                    <Shield className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                    <h2 className="mb-2 text-xl font-semibold">Access Denied</h2>
-                    <p className="text-muted-foreground">Admin privileges required to access this chat.</p>
-                </div>
+                <div className="text-center">Loading admin chat...</div>
             </div>
         );
     }

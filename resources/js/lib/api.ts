@@ -16,6 +16,9 @@ import type {
 
 const API_BASE_URL = '/api';
 
+// Define public routes that should not redirect on 401
+const PUBLIC_ROUTES = ['/', '/chat', '/auth/login', '/auth/register', '/health', '/install-pwa'];
+
 // Create a centralized fetch function with auth handling
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = localStorage.getItem('auth_token');
@@ -44,7 +47,13 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
     if (!response.ok) {
         if (response.status === 401) {
             localStorage.removeItem('auth_token');
-            window.location.href = '/login';
+            // Only redirect if we're not on a public route
+            const currentPath = window.location.pathname;
+            const isPublicRoute = PUBLIC_ROUTES.includes(currentPath);
+            
+            if (!isPublicRoute && !currentPath.includes('/auth/login')) {
+                window.location.href = '/auth/login';
+            }
             throw new Error('Unauthorized');
         }
 
@@ -108,7 +117,13 @@ async function apiRequestFormData<T>(endpoint: string, data: Record<string, unkn
     if (!response.ok) {
         if (response.status === 401) {
             localStorage.removeItem('auth_token');
-            window.location.href = '/auth/login';
+            // Only redirect if we're not on a public route
+            const currentPath = window.location.pathname;
+            const isPublicRoute = PUBLIC_ROUTES.includes(currentPath);
+            
+            if (!isPublicRoute && !currentPath.includes('/auth/login')) {
+                window.location.href = '/auth/login';
+            }
             throw new Error('Unauthorized');
         }
 
@@ -325,6 +340,8 @@ export const queryClient = new QueryClient({
                 }
                 return failureCount < 2;
             },
+            refetchOnWindowFocus: false,
+            refetchOnReconnect: false,
         },
     },
 });
