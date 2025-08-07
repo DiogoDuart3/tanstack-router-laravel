@@ -1,6 +1,7 @@
 /**
  * Notification utilities for PWA and browser notifications
  */
+import { pushApi } from './api';
 
 export type NotificationPermissionStatus = 'default' | 'granted' | 'denied';
 
@@ -179,5 +180,172 @@ export class NotificationManager {
             permission: this.getPermission(),
             isPWA: this.isPWA(),
         };
+    }
+
+    /**
+     * Check if push notifications are supported
+     */
+    static isPushSupported(): boolean {
+        return (
+            'serviceWorker' in navigator &&
+            'PushManager' in window &&
+            'Notification' in window
+        );
+    }
+
+    /**
+     * Convert VAPID key from base64 to Uint8Array
+     */
+    static urlBase64ToUint8Array(base64String: string): Uint8Array {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+    }
+
+    /**
+     * Get VAPID public key from server
+     */
+    static async getVapidKey(): Promise<string | null> {
+        try {
+            const response = await pushApi.getVapidKey();
+            return response.vapid_public_key;
+        } catch (error) {
+            console.error('Error getting VAPID key:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Subscribe to push notifications
+     */
+    static async subscribeToPush(): Promise<boolean> {
+        if (!this.isPushSupported()) {
+            console.warn('Push notifications are not supported');
+            return false;
+        }
+
+        try {
+            // Request notification permission first
+            const permission = await this.requestPermission();
+            if (permission !== 'granted') {
+                console.warn('Notification permission not granted');
+                return false;
+            }
+
+            // Get service worker registration
+            const registration = await navigator.serviceWorker.ready;
+            if (!registration) {
+                console.error('Service worker not ready');
+                return false;
+            }
+
+            // Get VAPID key
+            const vapidKey = await this.getVapidKey();
+            if (!vapidKey) {
+                console.error('Could not get VAPID key');
+                return false;
+            }
+
+            // Check if already subscribed
+            const existingSubscription = await registration.pushManager.getSubscription();
+            if (existingSubscription) {
+                console.log('Already subscribed to push notifications');
+                // Send to server anyway in case it's not stored
+                await this.sendSubscriptionToServer(existingSubscription);
+                return true;
+            }
+
+            // Subscribe to push notifications
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: this.urlBase64ToUint8Array(vapidKey).buffer,
+            });
+
+            console.log('Subscribed to push notifications:', subscription);
+
+            // Send subscription to server
+            await this.sendSubscriptionToServer(subscription);
+            return true;
+
+        } catch (error) {
+            console.error('Error subscribing to push notifications:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Unsubscribe from push notifications
+     */
+    static async unsubscribeFromPush(): Promise<boolean> {
+        if (!this.isPushSupported()) {
+            return false;
+        }
+
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+
+            if (subscription) {
+                await subscription.unsubscribe();
+                console.log('Unsubscribed from push notifications');
+            }
+
+            // Remove from server
+            await pushApi.unsubscribe();
+            return true;
+
+        } catch (error) {
+            console.error('Error unsubscribing from push notifications:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Send subscription details to server
+     */
+    private static async sendSubscriptionToServer(subscription: PushSubscription): Promise<void> {
+        const subscriptionData = {
+            endpoint: subscription.endpoint,
+            keys: {
+                p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')!))),
+                auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth')!)))
+            }
+        };
+
+        await pushApi.subscribe(subscriptionData);
+        console.log('Subscription sent to server');
+    }
+
+    /**
+     * Check if user is subscribed to push notifications
+     */
+    static async isSubscribedToPush(): Promise<boolean> {
+        if (!this.isPushSupported()) {
+            return false;
+        }
+
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+            return !!subscription;
+        } catch (error) {
+            console.error('Error checking push subscription:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Test push notifications by sending a test notification from server
+     */
+    static async testPushNotification(): Promise<boolean> {
+        try {
+            const response = await pushApi.test();
+            console.log('Test push notification sent:', response);
+            return response.success;
+        } catch (error) {
+            console.error('Error testing push notification:', error);
+            return false;
+        }
     }
 }

@@ -67,6 +67,9 @@ Route::prefix('chat')->group(function () {
     Route::post('typing', [ChatController::class, 'typing']);
 });
 
+// Public push notification VAPID key endpoint
+Route::get('push/vapid-key', [NotificationController::class, 'getVapidKey']);
+
 // Protected routes
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('auth/user', [AuthController::class, 'user']);
@@ -90,9 +93,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/', [NotificationController::class, 'getNotifications']);
     });
 
-    // Push notification routes
+    // Push notification routes (subscription/unsubscription requires auth)
     Route::prefix('push')->group(function () {
-        Route::get('vapid-key', [NotificationController::class, 'getVapidKey']);
         Route::post('subscribe', [NotificationController::class, 'subscribe']);
         Route::post('unsubscribe', [NotificationController::class, 'unsubscribe']);
         Route::post('test', [NotificationController::class, 'testPush']);

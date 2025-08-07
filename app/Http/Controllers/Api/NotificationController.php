@@ -5,12 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PushSubscription;
 use App\Notifications\PushNotificationDemo;
+use App\Services\PushNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Minishlink\WebPush\WebPush;
-use Minishlink\WebPush\Subscription;
 
 class NotificationController extends Controller
 {
@@ -36,7 +35,15 @@ class NotificationController extends Controller
             $icon = $request->input('icon', '🔔');
 
             // Send the notification (will be queued and delayed by 3 seconds)
-            $user->notify(new PushNotificationDemo($title, $message, $type, $icon));
+            $notification = new PushNotificationDemo($title, $message, $type, $icon);
+            $user->notify($notification);
+            
+            // Also send push notification
+            $pushService = new PushNotificationService();
+            $pushService->sendToUser($user, $title, $message, [
+                'type' => $type,
+                'icon' => $icon
+            ]);
 
             Log::info('Demo notification queued for user', [
                 'user_id' => $user->id,
@@ -98,6 +105,13 @@ class NotificationController extends Controller
             $notification->delay = null; // Remove delay for immediate sending
             
             $user->notify($notification);
+
+            // Also send push notification immediately
+            $pushService = new PushNotificationService();
+            $pushService->sendToUser($user, $title, $message, [
+                'type' => $type,
+                'icon' => $icon
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -200,31 +214,28 @@ class NotificationController extends Controller
             }
 
             $request->validate([
-                'subscription' => 'required|array',
-                'subscription.endpoint' => 'required|string',
-                'subscription.keys' => 'required|array',
-                'subscription.keys.p256dh' => 'required|string',
-                'subscription.keys.auth' => 'required|string',
+                'endpoint' => 'required|string',
+                'keys' => 'required|array',
+                'keys.p256dh' => 'required|string',
+                'keys.auth' => 'required|string',
             ]);
 
-            $subscriptionData = $request->input('subscription');
-
-            // Store or update subscription
+            // Store subscription using our PushSubscription model
             PushSubscription::updateOrCreate(
                 [
                     'user_id' => $user->id,
-                    'endpoint' => $subscriptionData['endpoint']
+                    'endpoint' => $request->input('endpoint')
                 ],
                 [
-                    'p256dh_key' => $subscriptionData['keys']['p256dh'],
-                    'auth_key' => $subscriptionData['keys']['auth'],
+                    'p256dh_key' => $request->input('keys.p256dh'),
+                    'auth_key' => $request->input('keys.auth'),
                     'user_agent' => $request->header('User-Agent', 'Unknown'),
                 ]
             );
 
             Log::info('Push subscription stored for user', [
                 'user_id' => $user->id,
-                'endpoint' => substr($subscriptionData['endpoint'], -20) // Last 20 chars for privacy
+                'endpoint' => substr($request->input('endpoint'), -20) // Last 20 chars for privacy
             ]);
 
             return response()->json([
@@ -261,7 +272,7 @@ class NotificationController extends Controller
             }
 
             // Delete all subscriptions for the user
-            PushSubscription::where('user_id', $user->id)->delete();
+            $user->pushSubscriptions()->delete();
 
             Log::info('Push subscriptions removed for user', [
                 'user_id' => $user->id
@@ -300,60 +311,20 @@ class NotificationController extends Controller
                 ], 401);
             }
 
-            $subscriptions = PushSubscription::where('user_id', $user->id)->get();
+            $pushService = new PushNotificationService();
+            $results = $pushService->sendTestNotification($user);
 
-            if ($subscriptions->isEmpty()) {
+            if (empty($results)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'No push subscriptions found for user'
                 ], 400);
             }
 
-            $webPush = new WebPush([
-                'VAPID' => [
-                    'subject' => config('app.url'),
-                    'publicKey' => config('webpush.vapid.public_key'),
-                    'privateKey' => config('webpush.vapid.private_key'),
-                ],
-            ]);
-
-            $payload = json_encode([
-                'title' => '🧪 Test Push Notification',
-                'body' => 'This is a test push notification sent in the background! Time: ' . now()->format('H:i:s'),
-                'icon' => '/favicon.ico',
-                'tag' => 'test-push-' . time(), // Unique tag to prevent grouping
-                'requireInteraction' => true, // Force notification to stay visible
-                'vibrate' => [200, 100, 200],
-                'timestamp' => time() * 1000,
-            ]);
-
-            $results = [];
-
-            foreach ($subscriptions as $subscription) {
-                $webPushSubscription = Subscription::create([
-                    'endpoint' => $subscription->endpoint,
-                    'publicKey' => $subscription->p256dh_key,
-                    'authToken' => $subscription->auth_key,
-                ]);
-
-                $result = $webPush->sendOneNotification($webPushSubscription, $payload);
-                $results[] = [
-                    'subscription_id' => $subscription->id,
-                    'success' => $result->isSuccess(),
-                    'reason' => $result->getReason()
-                ];
-            }
-
-            Log::info('Test push notifications sent', [
-                'user_id' => $user->id,
-                'subscription_count' => count($subscriptions),
-                'results' => $results
-            ]);
-
             return response()->json([
                 'success' => true,
                 'message' => 'Test push notification sent!',
-                'subscription_count' => count($subscriptions),
+                'subscription_count' => count($results),
                 'results' => $results
             ]);
 

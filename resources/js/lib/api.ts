@@ -329,6 +329,37 @@ export const notificationApi = {
         }>('/notifications' + (limit ? `?limit=${limit}` : '')),
 };
 
+// Push notification API
+export const pushApi = {
+    getVapidKey: () =>
+        apiRequest<{ vapid_public_key: string }>('/push/vapid-key'),
+
+    subscribe: (subscription: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
+        apiRequest<{ success: boolean; message: string }>('/push/subscribe', {
+            method: 'POST',
+            body: JSON.stringify(subscription),
+        }),
+
+    unsubscribe: () =>
+        apiRequest<{ success: boolean; message: string }>('/push/unsubscribe', {
+            method: 'POST',
+        }),
+
+    test: () =>
+        apiRequest<{
+            success: boolean;
+            message: string;
+            subscription_count: number;
+            results: Array<{
+                subscription_id: number;
+                success: boolean;
+                reason: string | null;
+            }>;
+        }>('/push/test', {
+            method: 'POST',
+        }),
+};
+
 export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {

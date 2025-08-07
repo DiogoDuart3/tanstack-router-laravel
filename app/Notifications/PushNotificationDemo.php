@@ -101,4 +101,5 @@ class PushNotificationDemo extends Notification implements ShouldQueue
             ],
         ];
     }
+
 }

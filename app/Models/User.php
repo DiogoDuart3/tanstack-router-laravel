@@ -59,4 +59,9 @@ class User extends Authenticatable
     {
         return $this->is_admin;
     }
+
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
 }

@@ -7,9 +7,13 @@ export default function NotificationDemo() {
     const [status, setStatus] = useState(() => NotificationManager.getStatus());
     const [isLoading, setIsLoading] = useState(false);
     const [lastNotificationResult, setLastNotificationResult] = useState<string | null>(null);
+    const [isPushSubscribed, setIsPushSubscribed] = useState(false);
+    const [pushSupported, setPushSupported] = useState(false);
 
-    const refreshStatus = () => {
+    const refreshStatus = async () => {
         setStatus(NotificationManager.getStatus());
+        setPushSupported(NotificationManager.isPushSupported());
+        setIsPushSubscribed(await NotificationManager.isSubscribedToPush());
     };
 
     const handleRequestPermission = async () => {
@@ -94,6 +98,61 @@ export default function NotificationDemo() {
             setIsLoading(false);
         }
     };
+
+    const handleSubscribeToPush = async () => {
+        setIsLoading(true);
+        try {
+            const success = await NotificationManager.subscribeToPush();
+            if (success) {
+                setLastNotificationResult('✅ Successfully subscribed to push notifications!');
+                setIsPushSubscribed(true);
+            } else {
+                setLastNotificationResult('❌ Failed to subscribe to push notifications');
+            }
+        } catch (error) {
+            setLastNotificationResult('Error subscribing to push notifications: ' + (error as Error).message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleUnsubscribeFromPush = async () => {
+        setIsLoading(true);
+        try {
+            const success = await NotificationManager.unsubscribeFromPush();
+            if (success) {
+                setLastNotificationResult('✅ Successfully unsubscribed from push notifications!');
+                setIsPushSubscribed(false);
+            } else {
+                setLastNotificationResult('❌ Failed to unsubscribe from push notifications');
+            }
+        } catch (error) {
+            setLastNotificationResult('Error unsubscribing from push notifications: ' + (error as Error).message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleTestPushNotification = async () => {
+        setIsLoading(true);
+        try {
+            const success = await NotificationManager.testPushNotification();
+            if (success) {
+                setLastNotificationResult('🧪 Test push notification sent! Check your device.');
+            } else {
+                setLastNotificationResult('❌ Failed to send test push notification');
+            }
+        } catch (error) {
+            setLastNotificationResult('Error sending test push notification: ' + (error as Error).message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Initialize push notification status
+    useEffect(() => {
+        refreshStatus();
+    }, []);
 
     // Listen for server notifications (handled globally now, this is just for UI feedback)
     useEffect(() => {
@@ -186,6 +245,32 @@ export default function NotificationDemo() {
                             {status.isPWA ? '📱 PWA (Installed)' : '🌐 Browser'}
                         </span>
                     </div>
+
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm">Push Support:</span>
+                        <span
+                            className={`rounded-full px-2 py-1 text-xs font-medium ${
+                                pushSupported
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                    : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                            }`}
+                        >
+                            {pushSupported ? '✅ Supported' : '❌ Not Supported'}
+                        </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm">Push Subscription:</span>
+                        <span
+                            className={`rounded-full px-2 py-1 text-xs font-medium ${
+                                isPushSubscribed
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
+                            }`}
+                        >
+                            {isPushSubscribed ? '🔔 Subscribed' : '🔕 Not Subscribed'}
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -253,6 +338,37 @@ export default function NotificationDemo() {
                             {isLoading ? '⏳' : '⚡'} Send Immediate Server Notification
                         </button>
                     </div>
+
+                    <div className="mt-4 border-t pt-4">
+                        <h3 className="mb-2 text-sm font-semibold text-muted-foreground">Push Notifications (Background)</h3>
+
+                        {!isPushSubscribed ? (
+                            <button
+                                onClick={handleSubscribeToPush}
+                                disabled={isLoading || !pushSupported || status.permission !== 'granted'}
+                                className="mb-2 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-gray-400"
+                            >
+                                {isLoading ? '⏳' : '🔔'} Subscribe to Push Notifications
+                            </button>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={handleTestPushNotification}
+                                    disabled={isLoading}
+                                    className="mb-2 flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-medium text-white transition-colors hover:bg-green-700 disabled:bg-gray-400"
+                                >
+                                    {isLoading ? '⏳' : '🧪'} Test Push Notification
+                                </button>
+                                <button
+                                    onClick={handleUnsubscribeFromPush}
+                                    disabled={isLoading}
+                                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 font-medium text-white transition-colors hover:bg-red-700 disabled:bg-gray-400"
+                                >
+                                    {isLoading ? '⏳' : '🔕'} Unsubscribe from Push
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
 
                 {lastNotificationResult && (
@@ -290,11 +406,13 @@ export default function NotificationDemo() {
                 <div className="space-y-2 text-sm text-muted-foreground">
                     <p>• <strong>Client notifications</strong> work in both browser and PWA modes</p>
                     <p>• <strong>Server notifications</strong> use Laravel's queue system and WebSocket broadcasting</p>
+                    <p>• <strong>Push notifications</strong> work even when the app is completely closed</p>
                     <p>• PWA notifications can appear even when the app is closed</p>
                     <p>• Browser notifications only work when the tab is open</p>
                     <p>• The queued server notification will arrive 3 seconds after clicking</p>
+                    <p>• Push notifications require subscription and work on iOS 16.4+ Safari</p>
                     <p>• Install the app for the best notification experience</p>
-                    <p>• Server notifications require user authentication</p>
+                    <p>• Server and push notifications require user authentication</p>
                 </div>
             </div>
         </div>
