@@ -9,6 +9,7 @@ import { routeTree } from './routeTree.gen';
 import echo from './lib/echo';
 import { ServerNotificationService } from './lib/server-notifications';
 import { AuthDebugger } from './lib/debug-auth';
+import { swUpdater } from './lib/serviceWorkerUpdater';
 
 // Register service worker for offline support
 if ('serviceWorker' in navigator) {
@@ -41,6 +42,8 @@ setTimeout(() => {
 // Make test functions globally available for debugging
 (window as any).testServerNotification = ServerNotificationService.testServiceWorkerNotification;
 (window as any).reinitNotifications = ServerNotificationService.forceReInitialize;
+(window as any).checkForUpdates = () => swUpdater.forceUpdateCheck();
+(window as any).applyUpdate = () => swUpdater.applyUpdate();
 
 // Initialize auth debugger
 AuthDebugger.logCurrentState();

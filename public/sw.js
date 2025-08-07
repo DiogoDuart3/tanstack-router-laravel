@@ -72,6 +72,13 @@ self.addEventListener('sync', (event) => {
 self.addEventListener('message', (event) => {
   console.log('SW received message:', event.data);
 
+  // Handle skip waiting message (for updates)
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('SW: Received SKIP_WAITING message, updating...');
+    self.skipWaiting();
+    return;
+  }
+
   if (event.data && event.data.type === 'SERVER_NOTIFICATION') {
     // Show system notification from server event
     const { title, body, tag, icon, data } = event.data.payload;

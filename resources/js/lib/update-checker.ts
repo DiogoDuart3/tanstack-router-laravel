@@ -113,6 +113,39 @@ class UpdateChecker {
   async forceUpdate() {
     console.log('Forcing PWA update...');
     
+    // First try to use service worker update mechanism
+    if ('serviceWorker' in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        
+        // Check if there's a waiting service worker
+        if (registration.waiting) {
+          console.log('Using waiting service worker for update');
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          return;
+        }
+        
+        // Force service worker update check
+        await registration.update();
+        
+        // If still no waiting worker after update check, force refresh
+        if (!registration.waiting) {
+          console.log('No waiting worker found, forcing hard refresh');
+          this.performHardRefresh();
+          return;
+        }
+      } catch (error) {
+        console.warn('Service worker update failed, falling back to hard refresh:', error);
+        this.performHardRefresh();
+        return;
+      }
+    }
+    
+    // Fallback to hard refresh
+    this.performHardRefresh();
+  }
+
+  private async performHardRefresh() {
     // Unregister current service worker
     if ('serviceWorker' in navigator) {
       const registrations = await navigator.serviceWorker.getRegistrations();

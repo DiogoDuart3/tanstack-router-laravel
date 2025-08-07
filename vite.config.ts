@@ -66,16 +66,11 @@ export default defineConfig({
         }),
         VitePWA({
             registerType: 'autoUpdate',
-            manifest: {
-                name: 'Laravel TanStack Router App',
-                short_name: 'Laravel App',
-                description: 'Laravel TanStack Router PWA Application',
-                theme_color: '#0c0c0c',
-            },
-            pwaAssets: { disabled: false, config: true },
-            devOptions: { enabled: true },
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+                // Check for updates every 60 seconds when app is active
+                skipWaiting: true,
+                clientsClaim: true,
                 runtimeCaching: [
                     {
                         urlPattern: /^\/api\//,
@@ -87,6 +82,35 @@ export default defineConfig({
                     },
                 ],
             },
+            manifest: {
+                name: 'Laravel TanStack Router App',
+                short_name: 'Laravel App',
+                description: 'Laravel TanStack Router PWA Application',
+                theme_color: '#0c0c0c',
+                background_color: '#0c0c0c',
+                display: 'standalone',
+                start_url: '/',
+                icons: [
+                    {
+                        src: 'pwa-192x192.png',
+                        sizes: '192x192',
+                        type: 'image/png'
+                    },
+                    {
+                        src: 'pwa-512x512.png',
+                        sizes: '512x512',
+                        type: 'image/png'
+                    },
+                    {
+                        src: 'maskable-icon-512x512.png',
+                        sizes: '512x512',
+                        type: 'image/png',
+                        purpose: 'maskable'
+                    }
+                ]
+            },
+            pwaAssets: { disabled: false, config: true },
+            devOptions: { enabled: true },
         }),
     ],
 
