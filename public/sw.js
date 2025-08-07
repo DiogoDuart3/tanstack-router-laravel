@@ -36,7 +36,7 @@ self.addEventListener('activate', (event) => {
             return caches.delete(cacheName);
           })
       );
-      
+
       // Take control of all pages
       return self.clients.claim();
     })()
@@ -46,7 +46,7 @@ self.addEventListener('activate', (event) => {
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
   // Don't intercept these endpoints - let them go directly to network
-  if (event.request.url.includes('/api/version') || 
+  if (event.request.url.includes('/api/version') ||
       event.request.url.includes('/broadcasting/auth') ||
       event.request.url.includes('/sanctum/csrf-cookie')) {
     return;
@@ -71,11 +71,11 @@ self.addEventListener('sync', (event) => {
 // Listen for messages from the main app thread
 self.addEventListener('message', (event) => {
   console.log('SW received message:', event.data);
-  
+
   if (event.data && event.data.type === 'SERVER_NOTIFICATION') {
     // Show system notification from server event
     const { title, body, tag, icon, data } = event.data.payload;
-    
+
     self.registration.showNotification(title || 'Server Notification', {
       body: body,
       icon: icon || '/favicon.ico',
@@ -99,7 +99,7 @@ async function doBackgroundSync() {
   try {
     // Get queued actions from IndexedDB
     const syncQueue = JSON.parse(localStorage.getItem('sync-queue') || '[]');
-    
+
     if (syncQueue.length === 0) return;
 
     console.log('Background sync: processing', syncQueue.length, 'actions');
@@ -130,12 +130,12 @@ async function doBackgroundSync() {
 // Notification click handler
 self.addEventListener('notificationclick', (event) => {
   console.log('Notification clicked:', event.notification.tag);
-  
+
   event.notification.close();
-  
+
   // Handle different notification types
   let urlToOpen = '/';
-  
+
   switch (event.notification.tag) {
     case 'welcome':
       urlToOpen = '/';
@@ -160,10 +160,10 @@ self.addEventListener('notificationclick', (event) => {
     self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
       .then((clients) => {
         // Check if app is already open
-        const existingClient = clients.find(client => 
+        const existingClient = clients.find(client =>
           client.url.includes(self.location.origin)
         );
-        
+
         if (existingClient) {
           // Focus existing window and navigate
           existingClient.focus();
@@ -185,7 +185,7 @@ self.addEventListener('notificationclick', (event) => {
 self.addEventListener('push', (event) => {
   console.log('🔔 SW Push: Received push notification', event);
   console.log('🔔 SW Push: Event data exists:', !!event.data);
-  
+
   if (!event.data) {
     console.log('❌ SW Push: No data in push event, showing fallback notification');
     event.waitUntil(
@@ -238,28 +238,28 @@ self.addEventListener('push', (event) => {
   console.log('🚀 SW Push: Showing notification with options:', options);
   console.log('🚀 SW Push: Service worker state:', self.serviceWorker?.state || 'unknown');
   console.log('🚀 SW Push: Registration ready:', !!self.registration);
-  
+
   // Add more specific error handling
   event.waitUntil(
     (async () => {
       try {
         // Check if we can show notifications
-        const permission = await self.registration.showNotification('Test', { body: 'Checking permission', silent: true, tag: 'permission-check' })
+        /* const permission = await self.registration.showNotification('Test', { body: 'Checking permission', silent: true, tag: 'permission-check' })
           .then(() => 'granted')
           .catch((e) => {
             console.error('❌ SW Push: Permission check failed:', e);
             return 'denied';
           });
-        
+
         if (permission === 'denied') {
           console.error('❌ SW Push: No notification permission');
           return;
-        }
-        
+        } */
+
         // Show the actual notification
         await self.registration.showNotification(data.title || 'New Notification', options);
         console.log('✅ SW Push: Notification displayed successfully');
-        
+
       } catch (error) {
         console.error('❌ SW Push: Failed to show notification:', error);
         console.error('❌ SW Push: Error details:', {
@@ -267,7 +267,7 @@ self.addEventListener('push', (event) => {
           message: error.message,
           stack: error.stack
         });
-        
+
         // Try a fallback notification
         try {
           await self.registration.showNotification('Push Notification Error', {
@@ -286,7 +286,7 @@ self.addEventListener('push', (event) => {
 // Notification close handler
 self.addEventListener('notificationclose', (event) => {
   console.log('Notification closed:', event.notification.tag);
-  
+
   // Track notification dismissal if needed
   event.waitUntil(
     self.clients.matchAll().then(clients => {
