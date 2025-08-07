@@ -250,19 +250,6 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     (async () => {
       try {
-        // Check if we can show notifications
-        /* const permission = await self.registration.showNotification('Test', { body: 'Checking permission', silent: true, tag: 'permission-check' })
-          .then(() => 'granted')
-          .catch((e) => {
-            console.error('❌ SW Push: Permission check failed:', e);
-            return 'denied';
-          });
-
-        if (permission === 'denied') {
-          console.error('❌ SW Push: No notification permission');
-          return;
-        } */
-
         // Show the actual notification
         await self.registration.showNotification(data.title || 'New Notification', options);
         console.log('✅ SW Push: Notification displayed successfully');
