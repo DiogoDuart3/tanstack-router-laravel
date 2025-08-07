@@ -66,21 +66,13 @@ export default defineConfig({
         }),
         VitePWA({
             registerType: 'autoUpdate',
-            workbox: {
+            srcDir: 'public',
+            filename: 'sw.js',
+            strategies: 'injectManifest',
+            injectManifest: {
+                swSrc: 'public/sw.js',
+                swDest: 'public/build/sw.js',
                 globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-                // Check for updates every 60 seconds when app is active
-                skipWaiting: true,
-                clientsClaim: true,
-                runtimeCaching: [
-                    {
-                        urlPattern: /^\/api\//,
-                        handler: 'NetworkFirst',
-                        options: {
-                            cacheName: 'api-cache',
-                            networkTimeoutSeconds: 3,
-                        },
-                    },
-                ],
             },
             manifest: {
                 name: 'Laravel TanStack Router App',

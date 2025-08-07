@@ -1,22 +1,17 @@
 // Service Worker for offline support with version control
+import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching';
+import { NavigationRoute, registerRoute } from 'workbox-routing';
+
 const CACHE_NAME = 'laravel-app-v1';
 const APP_VERSION = self.APP_VERSION || 'unknown';
-const urlsToCache = [
-  '/',
-  '/todos-offline',
-  '/manifest.json'
-];
 
-// Install event - cache resources
+// Precache static assets using Workbox
+precacheAndRoute(self.__WB_MANIFEST);
+cleanupOutdatedCaches();
+
+// Install event
 self.addEventListener('install', (event) => {
   console.log('SW Install: Version', APP_VERSION);
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache:', CACHE_NAME);
-        return cache.addAll(urlsToCache);
-      })
-  );
   // Force activate immediately
   self.skipWaiting();
 });
@@ -24,42 +19,11 @@ self.addEventListener('install', (event) => {
 // Activate event - take control immediately
 self.addEventListener('activate', (event) => {
   console.log('SW Activate: Version', APP_VERSION);
-  event.waitUntil(
-    (async () => {
-      // Clean up old caches
-      const cacheNames = await caches.keys();
-      await Promise.all(
-        cacheNames
-          .filter(cacheName => cacheName !== CACHE_NAME)
-          .map(cacheName => {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          })
-      );
-
-      // Take control of all pages
-      return self.clients.claim();
-    })()
-  );
+  event.waitUntil(self.clients.claim());
 });
 
-// Fetch event - serve from cache when offline
-self.addEventListener('fetch', (event) => {
-  // Don't intercept these endpoints - let them go directly to network
-  if (event.request.url.includes('/api/version') ||
-      event.request.url.includes('/broadcasting/auth') ||
-      event.request.url.includes('/sanctum/csrf-cookie')) {
-    return;
-  }
-
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request);
-      })
-  );
-});
+// Navigation route - serve app shell for navigation requests
+registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html')));
 
 // Background sync for queued actions
 self.addEventListener('sync', (event) => {
