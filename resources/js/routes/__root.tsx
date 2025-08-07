@@ -1,3 +1,4 @@
+import Footer from '@/components/footer';
 import Header from '@/components/header';
 import { OfflineIndicator } from '@/components/offline-indicator';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -44,7 +45,7 @@ function RootComponent() {
             <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
                 <OfflineIndicator />
                 <UpdateNotification />
-                <div className="grid h-svh grid-rows-[auto_1fr]">
+                <div className="grid h-svh grid-rows-[auto_1fr_auto]">
                     <Header />
                     {isFetching ? (
                         <div className="flex h-full items-center justify-center pt-8">
@@ -53,6 +54,7 @@ function RootComponent() {
                     ) : (
                         <Outlet />
                     )}
+                    <Footer />
                 </div>
                 <Toaster richColors />
             </ThemeProvider>
