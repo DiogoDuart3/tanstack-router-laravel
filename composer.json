@@ -13,6 +13,7 @@
         "laravel-notification-channels/webpush": "^10.2",
         "laravel/framework": "^12.0",
         "laravel/horizon": "^5.33",
+        "laravel/pulse": "^1.4",
         "laravel/reverb": "^1.5",
         "laravel/sanctum": "^4.2",
         "laravel/tinker": "^2.10.1",
