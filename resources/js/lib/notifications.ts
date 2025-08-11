@@ -226,46 +226,57 @@ export class NotificationManager {
         }
 
         try {
+            console.log('Starting push subscription process...');
+            
             // Request notification permission first
+            console.log('Requesting notification permission...');
             const permission = await this.requestPermission();
             if (permission !== 'granted') {
-                console.warn('Notification permission not granted');
+                console.warn('Notification permission not granted:', permission);
                 return false;
             }
+            console.log('✅ Permission granted');
 
             // Get service worker registration
+            console.log('Getting service worker registration...');
             const registration = await navigator.serviceWorker.ready;
             if (!registration) {
                 console.error('Service worker not ready');
                 return false;
             }
+            console.log('✅ Service worker ready');
 
             // Get VAPID key
+            console.log('Fetching VAPID key from server...');
             const vapidKey = await this.getVapidKey();
             if (!vapidKey) {
                 console.error('Could not get VAPID key');
                 return false;
             }
+            console.log('✅ VAPID key received');
 
             // Check if already subscribed
+            console.log('Checking existing subscription...');
             const existingSubscription = await registration.pushManager.getSubscription();
             if (existingSubscription) {
-                console.log('Already subscribed to push notifications');
-                // Send to server anyway in case it's not stored
+                console.log('Already subscribed to push notifications, sending to server...');
                 await this.sendSubscriptionToServer(existingSubscription);
+                console.log('✅ Existing subscription synced with server');
                 return true;
             }
 
             // Subscribe to push notifications
+            console.log('Creating new push subscription...');
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: this.urlBase64ToUint8Array(vapidKey).buffer,
             });
-
-            console.log('Subscribed to push notifications:', subscription);
+            console.log('✅ New subscription created:', subscription);
 
             // Send subscription to server
+            console.log('Sending subscription to server...');
             await this.sendSubscriptionToServer(subscription);
+            console.log('✅ Push subscription complete!');
             return true;
 
         } catch (error) {
@@ -305,16 +316,21 @@ export class NotificationManager {
      * Send subscription details to server
      */
     private static async sendSubscriptionToServer(subscription: PushSubscription): Promise<void> {
-        const subscriptionData = {
-            endpoint: subscription.endpoint,
-            keys: {
-                p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')!))),
-                auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth')!)))
-            }
-        };
+        try {
+            const subscriptionData = {
+                endpoint: subscription.endpoint,
+                keys: {
+                    p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')!))),
+                    auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth')!)))
+                }
+            };
 
-        await pushApi.subscribe(subscriptionData);
-        console.log('Subscription sent to server');
+            await pushApi.subscribe(subscriptionData);
+            console.log('Subscription sent to server');
+        } catch (error) {
+            console.error('Failed to send subscription to server:', error);
+            throw error; // Re-throw so caller can handle it
+        }
     }
 
     /**

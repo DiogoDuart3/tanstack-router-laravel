@@ -66,13 +66,25 @@ export default defineConfig({
         }),
         VitePWA({
             registerType: 'autoUpdate',
-            srcDir: 'public',
-            filename: 'sw.js',
-            strategies: 'injectManifest',
-            injectManifest: {
-                swSrc: 'public/sw.js',
-                swDest: 'public/build/sw.js',
+            strategies: 'generateSW',
+            workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+                runtimeCaching: [
+                    {
+                        urlPattern: /^https:\/\/fonts\.googleapis\.com/,
+                        handler: 'CacheFirst',
+                        options: {
+                            cacheName: 'google-fonts-stylesheets',
+                        },
+                    },
+                    {
+                        urlPattern: /^https:\/\/fonts\.gstatic\.com/,
+                        handler: 'CacheFirst',
+                        options: {
+                            cacheName: 'google-fonts-webfonts',
+                        },
+                    },
+                ],
             },
             manifest: {
                 name: 'Laravel TanStack Router App',

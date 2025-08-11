@@ -16,14 +16,32 @@ export default function NotificationDemo() {
         setIsPushSubscribed(await NotificationManager.isSubscribedToPush());
     };
 
-    const handleRequestPermission = async () => {
+    const handleEnableNotifications = async () => {
         setIsLoading(true);
         try {
+            // First request permission
             const permission = await NotificationManager.requestPermission();
-            setLastNotificationResult(`Permission ${permission === 'granted' ? 'granted' : 'denied'}`);
-            refreshStatus();
+            if (permission !== 'granted') {
+                setLastNotificationResult(`Permission ${permission === 'denied' ? 'denied' : 'not granted'}`);
+                await refreshStatus();
+                return;
+            }
+
+            // If permission granted and push is supported, also subscribe to push
+            if (NotificationManager.isPushSupported()) {
+                const pushSuccess = await NotificationManager.subscribeToPush();
+                if (pushSuccess) {
+                    setLastNotificationResult('✅ Notifications enabled with push support!');
+                } else {
+                    setLastNotificationResult('✅ Notifications enabled (push subscription failed)');
+                }
+            } else {
+                setLastNotificationResult('✅ Notifications enabled (push not supported)');
+            }
+            
+            await refreshStatus();
         } catch (error) {
-            setLastNotificationResult('Error requesting permission');
+            setLastNotificationResult('Error enabling notifications: ' + (error as Error).message);
         } finally {
             setIsLoading(false);
         }
@@ -105,7 +123,7 @@ export default function NotificationDemo() {
             const success = await NotificationManager.subscribeToPush();
             if (success) {
                 setLastNotificationResult('✅ Successfully subscribed to push notifications!');
-                setIsPushSubscribed(true);
+                await refreshStatus(); // Refresh status after successful subscription
             } else {
                 setLastNotificationResult('❌ Failed to subscribe to push notifications');
             }
@@ -122,7 +140,7 @@ export default function NotificationDemo() {
             const success = await NotificationManager.unsubscribeFromPush();
             if (success) {
                 setLastNotificationResult('✅ Successfully unsubscribed from push notifications!');
-                setIsPushSubscribed(false);
+                await refreshStatus(); // Refresh status after successful unsubscription
             } else {
                 setLastNotificationResult('❌ Failed to unsubscribe from push notifications');
             }
@@ -287,11 +305,11 @@ export default function NotificationDemo() {
                 <div className="space-y-3">
                     {status.permission !== 'granted' && (
                         <button
-                            onClick={handleRequestPermission}
+                            onClick={handleEnableNotifications}
                             disabled={isLoading || !status.isSupported}
                             className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-gray-400"
                         >
-                            {isLoading ? '⏳' : '🔔'} Request Permission
+                            {isLoading ? '⏳' : '🔔'} Enable Notifications
                         </button>
                     )}
 
@@ -340,17 +358,10 @@ export default function NotificationDemo() {
                     </div>
 
                     <div className="mt-4 border-t pt-4">
-                        <h3 className="mb-2 text-sm font-semibold text-muted-foreground">Push Notifications (Background)</h3>
+                        <h3 className="mb-2 text-sm font-semibold text-muted-foreground">Advanced Push Management</h3>
+                        <p className="mb-3 text-xs text-muted-foreground">Push notifications are automatically enabled with the main "Enable Notifications" button above.</p>
 
-                        {!isPushSubscribed ? (
-                            <button
-                                onClick={handleSubscribeToPush}
-                                disabled={isLoading || !pushSupported || status.permission !== 'granted'}
-                                className="mb-2 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-gray-400"
-                            >
-                                {isLoading ? '⏳' : '🔔'} Subscribe to Push Notifications
-                            </button>
-                        ) : (
+                        {isPushSubscribed ? (
                             <>
                                 <button
                                     onClick={handleTestPushNotification}
@@ -367,6 +378,16 @@ export default function NotificationDemo() {
                                     {isLoading ? '⏳' : '🔕'} Unsubscribe from Push
                                 </button>
                             </>
+                        ) : pushSupported && status.permission === 'granted' ? (
+                            <button
+                                onClick={handleSubscribeToPush}
+                                disabled={isLoading}
+                                className="mb-2 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-gray-400"
+                            >
+                                {isLoading ? '⏳' : '🔔'} Manual Push Subscribe
+                            </button>
+                        ) : (
+                            <p className="text-xs text-muted-foreground">Push notifications not available or permission not granted.</p>
                         )}
                     </div>
                 </div>

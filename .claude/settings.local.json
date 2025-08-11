@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mv:*)",
+      "Bash(npm run build:*)",
+      "Bash(rm:*)",
+      "Bash(php artisan config:clear:*)",
+      "Bash(php artisan:*)"
+    ],
+    "deny": []
+  }
+}

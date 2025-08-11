@@ -19,11 +19,14 @@ export class PushNotificationManager {
             // Get VAPID public key from server
             await this.fetchVapidKey();
             
-            // Request permission if needed
-            await this.requestPermission();
+            // Check current permission status without requesting
+            const permission = Notification.permission;
+            console.log('PushNotificationManager: Permission status:', permission);
             
-            // Subscribe to push notifications
-            await this.subscribe();
+            // Only subscribe if permission is already granted
+            if (permission === 'granted') {
+                await this.subscribe();
+            }
             
             console.log('PushNotificationManager: ✅ Successfully initialized');
             return true;
