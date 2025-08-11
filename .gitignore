@@ -23,3 +23,5 @@ yarn-error.log
 /.vscode
 /.zed
 public/build.json
+public/sw.js
+public/workbox-*.js

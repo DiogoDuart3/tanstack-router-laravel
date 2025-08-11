@@ -70,7 +70,8 @@ export default defineConfig({
             scope: '/',
             outDir: 'public',
             workbox: {
-                globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+                globPatterns: ['**/*.{js,css,html,png,svg}'], // Removed ico to avoid favicon.ico issues
+                globIgnores: ['**/favicon.ico'], // Explicitly ignore favicon.ico
                 navigateFallback: null, // Disable navigation fallback to prevent index.html errors
                 runtimeCaching: [
                     {

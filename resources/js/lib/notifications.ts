@@ -418,12 +418,18 @@ export class NotificationManager {
                                     // Get service worker registration with improved handling
             console.log('Getting service worker registration...');
 
+            // Check service worker state first
+            console.log('SW Controller:', navigator.serviceWorker.controller);
+            console.log('SW Ready state available:', 'ready' in navigator.serviceWorker);
+
             // Check for service worker registration at root scope
             let registration = await navigator.serviceWorker.getRegistration('/');
+            console.log('Root scope registration:', registration);
 
             // If not found, check for any registration as fallback
             if (!registration) {
                 const registrations = await navigator.serviceWorker.getRegistrations();
+                console.log('All registrations:', registrations);
                 if (registrations.length > 0) {
                     registration = registrations[0]; // Use the first available registration
                     console.log(`Found service worker registration at scope: ${registration.scope}`);
@@ -431,7 +437,22 @@ export class NotificationManager {
             }
 
             if (!registration) {
-                console.log('No existing service worker registration found, waiting for registration...');
+                console.log('No existing service worker registration found, trying navigator.serviceWorker.ready...');
+
+                // Try using navigator.serviceWorker.ready as fallback
+                try {
+                    const readyRegistration = await navigator.serviceWorker.ready;
+                    console.log('Got registration from ready:', readyRegistration);
+                    if (readyRegistration) {
+                        registration = readyRegistration;
+                    }
+                } catch (readyError) {
+                    console.warn('navigator.serviceWorker.ready failed:', readyError);
+                }
+            }
+
+            if (!registration) {
+                console.log('Still no registration found, waiting for registration...');
 
                 // Wait for service worker to register with timeout
                 const registrationPromise = new Promise<ServiceWorkerRegistration>((resolve, reject) => {

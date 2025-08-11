@@ -11,29 +11,28 @@ import { ServerNotificationService } from './lib/server-notifications';
 import { AuthDebugger } from './lib/debug-auth';
 import { swUpdater } from './lib/serviceWorkerUpdater';
 
-// Register service worker for offline support
+// Register service worker for offline support immediately
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker
-            .register('/sw.js', {
-                scope: '/'
-            })
-            .then((registration) => {
-                console.log('SW registered: ', registration);
-                console.log('SW scope: ', registration.scope);
+    navigator.serviceWorker
+        .register('/sw.js', {
+            scope: '/'
+        })
+        .then((registration) => {
+            console.log('✅ SW registered successfully: ', registration);
+            console.log('✅ SW scope: ', registration.scope);
+            console.log('✅ SW state:', registration.active?.state || 'not active');
 
-                // Wait for the service worker to control this page
-                if (!navigator.serviceWorker.controller) {
-                    console.log('SW: Waiting for service worker to take control...');
-                    navigator.serviceWorker.addEventListener('controllerchange', () => {
-                        console.log('SW: Service worker now controlling the page');
-                    });
-                }
-            })
-            .catch((registrationError) => {
-                console.log('SW registration failed: ', registrationError);
-            });
-    });
+            // Wait for the service worker to control this page
+            if (!navigator.serviceWorker.controller) {
+                console.log('SW: Waiting for service worker to take control...');
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    console.log('✅ SW: Service worker now controlling the page');
+                });
+            }
+        })
+        .catch((registrationError) => {
+            console.error('❌ SW registration failed: ', registrationError);
+        });
 }
 
 // Delay Echo and notification service initialization to allow authentication to complete
