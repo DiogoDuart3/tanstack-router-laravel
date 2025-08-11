@@ -59,7 +59,7 @@ Route::get('version', function () {
     ]);
 });
 
-// Public chat routes (accessible to everyone)
+// Public chat routes (accessible to everyone, but with server-controlled usernames)
 Route::prefix('chat')->group(function () {
     Route::get('/', [ChatController::class, 'index']);
     Route::get('recent', [ChatController::class, 'recent']);

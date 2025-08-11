@@ -27,6 +27,12 @@ class Chat extends Model
 
     public function getDisplayNameAttribute(): string
     {
-        return $this->user?->name ?? $this->username ?? 'Anonymous';
+        // For authenticated users, use their account name
+        if ($this->user) {
+            return $this->user->name;
+        }
+
+        // For non-authenticated users, use Anonymous
+        return 'Anonymous';
     }
 }

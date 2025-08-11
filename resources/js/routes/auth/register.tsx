@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authApi } from '@/lib/api';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -13,6 +13,7 @@ export const Route = createFileRoute('/auth/register')({
 
 function RegisterComponent() {
     const router = useRouter();
+    const queryClient = useQueryClient();
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -24,6 +25,7 @@ function RegisterComponent() {
         mutationFn: authApi.register,
         onSuccess: (data) => {
             localStorage.setItem('auth_token', data.token);
+            queryClient.invalidateQueries({ queryKey: ['auth', 'user'] });
             toast.success('Account created successfully');
             router.navigate({ to: '/dashboard' });
         },

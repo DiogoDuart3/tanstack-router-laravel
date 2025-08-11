@@ -6,13 +6,38 @@ use App\Events\MessageSent;
 use App\Events\UserTyping;
 use App\Http\Controllers\Controller;
 use App\Models\Chat;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class ChatController extends Controller
 {
+    /**
+     * Get the authenticated user from the request, handling optional authentication
+     */
+    private function getAuthenticatedUser(Request $request): ?User
+    {
+        // First try the standard Auth facade
+        if (Auth::check()) {
+            return Auth::user();
+        }
+
+        // If not authenticated via middleware, try to authenticate manually
+        $token = $request->bearerToken();
+        if ($token) {
+            $accessToken = PersonalAccessToken::findToken($token);
+            if ($accessToken && !$accessToken->expires_at || $accessToken->expires_at->isFuture()) {
+                return $accessToken->tokenable;
+            }
+        }
+
+        return null;
+    }
+
     public function index(Request $request): JsonResponse
     {
         $request->validate([
@@ -45,13 +70,15 @@ class ChatController extends Controller
         // Reverse to show oldest first
         $messages = $messages->reverse()->values();
 
-        $formattedMessages = $messages->map(function (Chat $chat) {
+        $currentUser = $this->getAuthenticatedUser($request);
+
+        $formattedMessages = $messages->map(function (Chat $chat) use ($currentUser) {
             return [
                 'id' => $chat->id,
                 'message' => $chat->message,
                 'display_name' => $chat->display_name,
                 'sent_at' => $chat->sent_at->toISOString(),
-                'is_own' => Auth::check() && Auth::id() === $chat->user_id,
+                'is_own' => $currentUser && $currentUser->id === $chat->user_id,
             ];
         });
 
@@ -65,15 +92,15 @@ class ChatController extends Controller
     {
         $request->validate([
             'message' => 'required|string|max:1000',
-            'username' => 'nullable|string|max:50',
         ]);
 
-        $user = Auth::user();
+        $user = $this->getAuthenticatedUser($request);
+        $displayName = $user?->name ?: 'Anonymous';
 
         // Create a temporary chat instance for broadcasting
         $tempChat = new Chat([
             'user_id' => $user?->id,
-            'username' => $user ? null : ($request->input('username') ?: 'Anonymous'),
+            'username' => null,
             'message' => $request->input('message'),
             'sent_at' => now(),
         ]);
@@ -89,7 +116,7 @@ class ChatController extends Controller
         // Now save the chat to the database
         $chat = Chat::create([
             'user_id' => $user?->id,
-            'username' => $user ? null : ($request->input('username') ?: 'Anonymous'),
+            'username' => null,
             'message' => $request->input('message'),
             'sent_at' => now(),
         ]);
@@ -117,13 +144,15 @@ class ChatController extends Controller
             ->reverse()
             ->values();
 
-        $formattedMessages = $messages->map(function (Chat $chat) {
+        $currentUser = $this->getAuthenticatedUser(request());
+
+        $formattedMessages = $messages->map(function (Chat $chat) use ($currentUser) {
             return [
                 'id' => $chat->id,
                 'message' => $chat->message,
                 'display_name' => $chat->display_name,
                 'sent_at' => $chat->sent_at->toISOString(),
-                'is_own' => Auth::check() && Auth::id() === $chat->user_id,
+                'is_own' => $currentUser && $currentUser->id === $chat->user_id,
             ];
         });
 
@@ -136,11 +165,12 @@ class ChatController extends Controller
     {
         $request->validate([
             'is_typing' => 'required|boolean',
-            'username' => 'nullable|string|max:50',
         ]);
 
-        $user = Auth::user();
-        $displayName = $user?->name ?? ($request->input('username') ?: 'Anonymous');
+        $user = $this->getAuthenticatedUser($request);
+
+        // Determine display name: use user name for authenticated users, Anonymous for guests
+        $displayName = $user?->name ?: 'Anonymous';
         $isTyping = $request->boolean('is_typing');
 
         // Broadcast typing indicator

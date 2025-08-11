@@ -19,7 +19,6 @@ export const Route = createFileRoute('/chat')({
 function ChatComponent() {
     const queryClient = useQueryClient();
     const [message, setMessage] = useState('');
-    const [username, setUsername] = useState('');
     const [typingUsers, setTypingUsers] = useState<string[]>([]);
     const [isCurrentUserTyping, setIsCurrentUserTyping] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -85,10 +84,9 @@ function ChatComponent() {
 
         channel.listen('UserTyping', (e: UserTypingEvent) => {
             const { user, is_typing } = e;
-            const currentUser = userData?.user?.name ?? username ?? 'Anonymous';
 
             // Don't show own typing indicator
-            if (user.display_name === currentUser) return;
+            if (user.display_name === (userData?.user?.name ?? 'Anonymous')) return;
 
             setTypingUsers((prev) => {
                 if (is_typing) {
@@ -104,7 +102,7 @@ function ChatComponent() {
         return () => {
             echo.leaveChannel('public-chat-typing');
         };
-    }, [userData?.user?.name, username]);
+    }, [userData?.user?.name]);
 
     // Cleanup timeouts on unmount
     useEffect(() => {
@@ -134,8 +132,6 @@ function ChatComponent() {
 
     // Handle typing indicator with debouncing
     const handleTyping = useCallback(() => {
-        const currentUser = userData?.user?.name ?? username ?? 'Anonymous';
-
         // Clear existing debounce timeout
         if (debounceTimeoutRef.current) {
             clearTimeout(debounceTimeoutRef.current);
@@ -146,7 +142,6 @@ function ChatComponent() {
             setIsCurrentUserTyping(true);
             sendTypingMutation.mutate({
                 is_typing: true,
-                username: !isAuthenticated ? currentUser : undefined,
             });
         }
 
@@ -160,10 +155,9 @@ function ChatComponent() {
             setIsCurrentUserTyping(false);
             sendTypingMutation.mutate({
                 is_typing: false,
-                username: !isAuthenticated ? currentUser : undefined,
             });
         }, 800);
-    }, [sendTypingMutation, userData?.user?.name, username, isAuthenticated, isCurrentUserTyping]);
+    }, [sendTypingMutation, isCurrentUserTyping]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -184,17 +178,12 @@ function ChatComponent() {
             setIsCurrentUserTyping(false);
             sendTypingMutation.mutate({
                 is_typing: false,
-                username: !isAuthenticated ? username || 'Anonymous' : undefined,
             });
         }
 
-        const payload: { message: string; username?: string } = {
+        const payload: { message: string } = {
             message: message.trim(),
         };
-
-        if (!isAuthenticated && username.trim()) {
-            payload.username = username.trim();
-        }
 
         sendMessageMutation.mutate(payload);
     };
@@ -210,7 +199,10 @@ function ChatComponent() {
                         Public Chat
                     </CardTitle>
                     <p className="text-sm text-muted-foreground">
-                        {isAuthenticated ? `Chatting as ${userData?.user?.name}` : 'Join the conversation! You can chat anonymously or sign in.'}
+                        {isAuthenticated
+                            ? `Chatting as ${userData?.user?.name}`
+                            : 'Join the conversation! You can chat anonymously or sign in.'
+                        }
                     </p>
                 </CardHeader>
 
@@ -256,19 +248,6 @@ function ChatComponent() {
 
                     {/* Message Input */}
                     <form onSubmit={handleSubmit} className="flex-shrink-0">
-                        {!isAuthenticated && (
-                            <div className="mb-3">
-                                <Input
-                                    type="text"
-                                    placeholder="Your name (optional)"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    maxLength={50}
-                                    className="max-w-xs"
-                                />
-                            </div>
-                        )}
-
                         <div className="flex gap-2">
                             <Input
                                 ref={inputRef}

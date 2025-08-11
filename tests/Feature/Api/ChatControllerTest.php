@@ -28,7 +28,7 @@ describe('Chat Index', function () {
     test('authenticated users can fetch chat messages', function () {
         $user = User::factory()->create();
         Chat::factory()->count(3)->create(['user_id' => $user->id]);
-        
+
         Sanctum::actingAs($user);
 
         $response = $this->getJson('/api/chat');
@@ -44,13 +44,13 @@ describe('Chat Index', function () {
 
     test('messages are returned in chronological order', function () {
         $user = User::factory()->create();
-        
+
         $firstChat = Chat::factory()->create([
             'user_id' => $user->id,
             'message' => 'First message',
             'sent_at' => now()->subMinutes(2)
         ]);
-        
+
         $secondChat = Chat::factory()->create([
             'user_id' => $user->id,
             'message' => 'Second message',
@@ -60,7 +60,7 @@ describe('Chat Index', function () {
         $response = $this->getJson('/api/chat');
 
         $response->assertStatus(200);
-        
+
         $messages = $response->json('messages');
         expect($messages[0]['message'])->toBe('First message');
         expect($messages[1]['message'])->toBe('Second message');
@@ -78,7 +78,7 @@ describe('Chat Index', function () {
 
     test('before_id parameter allows pagination', function () {
         $user = User::factory()->create();
-        
+
         // Create chats with explicit timestamps to ensure predictable ordering
         $firstChat = Chat::factory()->create(['user_id' => $user->id, 'sent_at' => now()->subMinutes(5)]);
         $secondChat = Chat::factory()->create(['user_id' => $user->id, 'sent_at' => now()->subMinutes(4)]);
@@ -89,7 +89,7 @@ describe('Chat Index', function () {
         $response = $this->getJson("/api/chat?before_id={$thirdChat->id}");
 
         $response->assertStatus(200);
-        
+
         $messages = $response->json('messages');
         expect(count($messages))->toBe(2); // Should return the 2 messages before the third one (first and second)
     });
@@ -104,32 +104,31 @@ describe('Chat Index', function () {
     test('is_own flag is set correctly for authenticated users', function () {
         $user1 = User::factory()->create();
         $user2 = User::factory()->create();
-        
+
         Chat::factory()->create(['user_id' => $user1->id, 'message' => 'My message']);
         Chat::factory()->create(['user_id' => $user2->id, 'message' => 'Other message']);
-        
+
         Sanctum::actingAs($user1);
 
         $response = $this->getJson('/api/chat');
 
         $response->assertStatus(200);
-        
+
         $messages = $response->json('messages');
         $myMessage = collect($messages)->firstWhere('message', 'My message');
         $otherMessage = collect($messages)->firstWhere('message', 'Other message');
-        
+
         expect($myMessage['is_own'])->toBe(true);
         expect($otherMessage['is_own'])->toBe(false);
     });
 });
 
 describe('Chat Store', function () {
-    test('guests can send messages with username', function () {
+    test('guests can send messages', function () {
         Event::fake();
 
         $response = $this->postJson('/api/chat', [
-            'message' => 'Hello from guest',
-            'username' => 'GuestUser'
+            'message' => 'Hello from guest'
         ]);
 
         $response->assertStatus(201)
@@ -139,14 +138,14 @@ describe('Chat Store', function () {
             ->assertJson([
                 'message' => [
                     'message' => 'Hello from guest',
-                    'display_name' => 'GuestUser',
+                    'display_name' => 'Anonymous',
                     'is_own' => true,
                 ]
             ]);
 
         $this->assertDatabaseHas('chats', [
             'message' => 'Hello from guest',
-            'username' => 'GuestUser',
+            'username' => null,
             'user_id' => null,
         ]);
 
@@ -170,14 +169,14 @@ describe('Chat Store', function () {
 
         $this->assertDatabaseHas('chats', [
             'message' => 'Hello anonymously',
-            'username' => 'Anonymous',
+            'username' => null,
             'user_id' => null,
         ]);
     });
 
     test('authenticated users can send messages', function () {
         Event::fake();
-        
+
         $user = User::factory()->create(['name' => 'John Doe']);
         Sanctum::actingAs($user);
 
@@ -203,6 +202,8 @@ describe('Chat Store', function () {
         Event::assertDispatched(MessageSent::class);
     });
 
+
+
     test('message is required', function () {
         $response = $this->postJson('/api/chat', []);
 
@@ -221,17 +222,7 @@ describe('Chat Store', function () {
             ->assertJsonValidationErrors(['message']);
     });
 
-    test('username cannot exceed maximum length', function () {
-        $longUsername = str_repeat('a', 51); // 51 characters, above max of 50
 
-        $response = $this->postJson('/api/chat', [
-            'message' => 'Test message',
-            'username' => $longUsername
-        ]);
-
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['username']);
-    });
 });
 
 describe('Chat Recent', function () {
@@ -252,13 +243,13 @@ describe('Chat Recent', function () {
 
     test('recent messages are in chronological order', function () {
         $user = User::factory()->create();
-        
+
         $firstChat = Chat::factory()->create([
             'user_id' => $user->id,
             'message' => 'Older message',
             'sent_at' => now()->subHour()
         ]);
-        
+
         $secondChat = Chat::factory()->create([
             'user_id' => $user->id,
             'message' => 'Newer message',
@@ -268,7 +259,7 @@ describe('Chat Recent', function () {
         $response = $this->getJson('/api/chat/recent');
 
         $response->assertStatus(200);
-        
+
         $messages = $response->json('messages');
         expect($messages[0]['message'])->toBe('Older message');
         expect($messages[1]['message'])->toBe('Newer message');
@@ -280,21 +271,20 @@ describe('Chat Typing', function () {
         Event::fake();
 
         $response = $this->postJson('/api/chat/typing', [
-            'is_typing' => true,
-            'username' => 'GuestUser'
+            'is_typing' => true
         ]);
 
         $response->assertStatus(200)
             ->assertJson(['status' => 'ok']);
 
         Event::assertDispatched(UserTyping::class, function ($event) {
-            return $event->user['display_name'] === 'GuestUser' && $event->isTyping === true;
+            return $event->user['display_name'] === 'Anonymous' && $event->isTyping === true;
         });
     });
 
     test('authenticated users can send typing indicator', function () {
         Event::fake();
-        
+
         $user = User::factory()->create(['name' => 'John Doe']);
         Sanctum::actingAs($user);
 
@@ -309,6 +299,8 @@ describe('Chat Typing', function () {
             return $event->user['display_name'] === 'John Doe' && $event->isTyping === false;
         });
     });
+
+
 
     test('typing indicator defaults to Anonymous for guests without username', function () {
         Event::fake();
@@ -340,15 +332,5 @@ describe('Chat Typing', function () {
             ->assertJsonValidationErrors(['is_typing']);
     });
 
-    test('username cannot exceed maximum length for typing', function () {
-        $longUsername = str_repeat('a', 51); // 51 characters, above max of 50
 
-        $response = $this->postJson('/api/chat/typing', [
-            'is_typing' => true,
-            'username' => $longUsername
-        ]);
-
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['username']);
-    });
 });

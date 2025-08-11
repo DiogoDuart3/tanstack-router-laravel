@@ -1,9 +1,12 @@
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
-import { type User } from '@/types';
-import { Link } from '@tanstack/react-router';
+import { authApi } from '@/lib/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { LogOut, Settings } from 'lucide-react';
+import { toast } from 'sonner';
+import { type User } from '@/types';
 
 interface UserMenuContentProps {
     user: User;
@@ -11,11 +14,25 @@ interface UserMenuContentProps {
 
 export function UserMenuContent({ user }: UserMenuContentProps) {
     const cleanup = useMobileNavigation();
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
+
+    const logoutMutation = useMutation({
+        mutationFn: authApi.logout,
+        onSuccess: () => {
+            localStorage.removeItem('auth_token');
+            queryClient.clear();
+            toast.success('Logged out successfully');
+            navigate({ to: '/auth/login' });
+        },
+        onError: (error) => {
+            toast.error(`Logout failed: ${error.message}`);
+        },
+    });
 
     const handleLogout = () => {
         cleanup();
-        // TODO: Replace with actual logout API call and navigation
-        // router.navigate({ to: '/auth/login' });
+        logoutMutation.mutate();
     };
 
     return (
@@ -35,11 +52,9 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                 </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-                <Link className="block w-full" to="/auth/login" onClick={handleLogout}>
-                    <LogOut className="mr-2" />
-                    Log out
-                </Link>
+            <DropdownMenuItem onClick={handleLogout} disabled={logoutMutation.isPending}>
+                <LogOut className="mr-2" />
+                {logoutMutation.isPending ? 'Logging out...' : 'Log out'}
             </DropdownMenuItem>
         </>
     );

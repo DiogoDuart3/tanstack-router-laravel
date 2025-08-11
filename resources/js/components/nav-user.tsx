@@ -3,29 +3,29 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/c
 import { UserInfo } from '@/components/user-info';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useIsMobile } from '@/hooks/use-mobile';
-// import { type SharedData } from '@/types'; // No longer needed with TanStack Router
-// TODO: Replace with proper auth context or state management
-// import { usePage } from '@inertiajs/react';
+import { authApi } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
 import { ChevronsUpDown } from 'lucide-react';
 
 export function NavUser() {
-    // TODO: Replace with proper auth context or state management
-    // const { auth } = usePage<SharedData>().props;
     const { state } = useSidebar();
     const isMobile = useIsMobile();
 
-    // Temporary mock data - replace with actual auth state
-    const auth = {
-        user: {
-            id: 1,
-            name: 'User',
-            email: 'user@example.com',
-            avatar: '',
-            email_verified_at: null,
-            created_at: '2024-01-01T00:00:00.000000Z',
-            updated_at: '2024-01-01T00:00:00.000000Z',
-        },
-    };
+    // Fetch user data for authentication
+    const { data: userData } = useQuery({
+        queryKey: ['auth', 'user'],
+        queryFn: authApi.getUser,
+        retry: false,
+        staleTime: 1000 * 60 * 5,
+    });
+
+    const isAuthenticated = !!userData?.user;
+    const user = userData?.user;
+
+    // Don't render anything if not authenticated
+    if (!isAuthenticated) {
+        return null;
+    }
 
     return (
         <SidebarMenu>
@@ -33,7 +33,7 @@ export function NavUser() {
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton size="lg" className="group text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent">
-                            <UserInfo user={auth.user} />
+                            <UserInfo user={user!} />
                             <ChevronsUpDown className="ml-auto size-4" />
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
@@ -42,7 +42,7 @@ export function NavUser() {
                         align="end"
                         side={isMobile ? 'bottom' : state === 'collapsed' ? 'left' : 'bottom'}
                     >
-                        <UserMenuContent user={auth.user} />
+                        <UserMenuContent user={user!} />
                     </DropdownMenuContent>
                 </DropdownMenu>
             </SidebarMenuItem>
