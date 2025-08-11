@@ -39,7 +39,7 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     console.log('SW: Push notification data:', data);
 
-    const options: NotificationOptions = {
+    const options: NotificationOptions & { actions?: { action: string; title: string; icon?: string }[]; image?: string } = {
       body: data.body || data.message || 'You have a new notification',
       icon: data.icon || '/favicon.svg',
       badge: data.badge || '/favicon.svg',

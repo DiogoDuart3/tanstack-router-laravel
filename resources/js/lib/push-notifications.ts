@@ -31,7 +31,7 @@ export class PushNotificationManager {
 
             // Check if running as standalone PWA
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                               (navigator as any).standalone === true;
+                               (navigator as Navigator & { standalone?: boolean }).standalone === true;
             if (!isStandalone) {
                 console.warn('PushNotificationManager: iOS Safari detected in browser mode. Install as PWA for best experience.');
             }
@@ -132,7 +132,7 @@ export class PushNotificationManager {
             // Create new subscription
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey)
+                applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey).buffer as ArrayBuffer
             });
 
             console.log('PushNotificationManager: ✅ New subscription created');
@@ -301,7 +301,7 @@ export class PushNotificationManager {
 
         } catch (error) {
             console.error('PushNotificationManager: ❌ Failed to send test notification:', error);
-            alert(`Failed to send push notification: ${error.message}`);
+            alert(`Failed to send push notification: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 }

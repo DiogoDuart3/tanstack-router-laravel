@@ -12,7 +12,7 @@ export interface NotificationOptions {
     badge?: string;
     image?: string;
     tag?: string;
-    data?: any;
+    data?: Record<string, unknown>;
     requireInteraction?: boolean;
     silent?: boolean;
     vibrate?: number[];
@@ -31,7 +31,7 @@ export class NotificationManager {
      */
     static getIOSInfo(): { isIOS: boolean; version?: { major: number; minor: number; patch?: number }; isStandalone: boolean } {
         const userAgent = navigator.userAgent;
-        const isIOS = /iP(ad|hone|od)/.test(userAgent) && !(window as any).MSStream;
+        const isIOS = /iP(ad|hone|od)/.test(userAgent) && !(window as Window & { MSStream?: unknown }).MSStream;
 
         if (!isIOS) {
             return { isIOS: false, isStandalone: false };
@@ -39,7 +39,7 @@ export class NotificationManager {
 
         // Check if running as standalone PWA
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                           (navigator as any).standalone === true;
+                           (navigator as Navigator & { standalone?: boolean }).standalone === true;
 
         // Extract iOS version
         const versionMatch = userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/);
@@ -212,7 +212,7 @@ export class NotificationManager {
                         setTimeout(() => {
                             try {
                                 notification.close();
-                            } catch (e) {
+                            } catch {
                                 // iOS Safari may not allow programmatic close
                                 console.debug('iOS Safari: Could not programmatically close notification');
                             }
@@ -323,7 +323,7 @@ export class NotificationManager {
         return (
             window.matchMedia('(display-mode: standalone)').matches ||
             window.matchMedia('(display-mode: fullscreen)').matches ||
-            (window.navigator as any).standalone === true
+            (window.navigator as Navigator & { standalone?: boolean }).standalone === true
         );
     }
 
@@ -362,7 +362,7 @@ export class NotificationManager {
      */
     static urlBase64ToUint8Array(base64String: string): Uint8Array {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
-        const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
         const rawData = window.atob(base64);
         return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
     }
@@ -600,13 +600,10 @@ export class NotificationManager {
             console.log('Creating new push subscription...');
             const subscriptionOptions: PushSubscriptionOptions = {
                 userVisibleOnly: true,
-                applicationServerKey: this.urlBase64ToUint8Array(vapidKey)
+                applicationServerKey: this.urlBase64ToUint8Array(vapidKey).buffer as ArrayBuffer
             };
 
-            // iOS Safari requires the applicationServerKey as ArrayBuffer
-            if (iosInfo.isIOS) {
-                subscriptionOptions.applicationServerKey = this.urlBase64ToUint8Array(vapidKey).buffer;
-            }
+            // Note: Using .buffer for compatibility with all browsers including iOS Safari
 
             const subscription = await readyRegistration.pushManager.subscribe(subscriptionOptions);
             console.log('✅ New subscription created:', subscription);

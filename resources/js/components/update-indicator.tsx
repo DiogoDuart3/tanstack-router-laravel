@@ -1,7 +1,7 @@
 import { useServiceWorkerUpdate } from '@/hooks/useServiceWorkerUpdate';
 
 export default function UpdateIndicator() {
-    const { updateAvailable, applyUpdate, checkForUpdates } = useServiceWorkerUpdate();
+    const { updateAvailable, applyUpdate } = useServiceWorkerUpdate();
 
     if (!updateAvailable) {
         return null;

@@ -64,7 +64,7 @@ export default function NotificationDemo() {
         try {
             const success = await NotificationManager.showTodoReminder('Complete your daily tasks');
             setLastNotificationResult(success ? 'Todo reminder sent!' : 'Failed to send notification');
-        } catch (error) {
+        } catch {
             setLastNotificationResult('Error sending notification');
         } finally {
             setIsLoading(false);
@@ -76,7 +76,7 @@ export default function NotificationDemo() {
         try {
             const success = await NotificationManager.showChatNotification('Demo User', 'Hey there! This is a test chat notification 👋');
             setLastNotificationResult(success ? 'Chat notification sent!' : 'Failed to send notification');
-        } catch (error) {
+        } catch {
             setLastNotificationResult('Error sending notification');
         } finally {
             setIsLoading(false);
@@ -406,10 +406,10 @@ export default function NotificationDemo() {
                     <div className="space-y-3">
                         {serverNotifications.notifications.map((notification) => (
                             <div key={notification.id} className="flex items-start space-x-3 rounded-lg bg-muted/50 p-3">
-                                <div className="text-lg">{notification.data.icon || '🔔'}</div>
+                                <div className="text-lg">{(notification.data.icon as string) || '🔔'}</div>
                                 <div className="flex-1 space-y-1">
-                                    <div className="text-sm font-medium">{notification.data.title}</div>
-                                    <div className="text-xs text-muted-foreground">{notification.data.message}</div>
+                                    <div className="text-sm font-medium">{notification.data.title as string}</div>
+                                    <div className="text-xs text-muted-foreground">{notification.data.message as string}</div>
                                     <div className="text-xs text-muted-foreground">
                                         {new Date(notification.created_at).toLocaleString()}
                                         {notification.read_at && ' • Read'}

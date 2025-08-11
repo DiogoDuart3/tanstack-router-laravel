@@ -77,13 +77,13 @@ export class ServerNotificationService {
                     console.log('ServerNotificationService: ✅ Pusher connected');
                 });
 
-                pusher.connection.bind('error', (err: any) => {
+                pusher.connection.bind('error', (err: Record<string, unknown>) => {
                     console.error('ServerNotificationService: ❌ Pusher connection error:', err);
                 });
             }
 
             // Listen for notifications
-            channel.notification((event: any) => {
+            channel.notification((event: ServerNotificationEvent) => {
                 console.log('ServerNotificationService: 🔔 Global server notification received:', event);
                 this.handleServerNotification(event);
             });
@@ -93,7 +93,7 @@ export class ServerNotificationService {
                 console.log('ServerNotificationService: ✅ Successfully subscribed to notifications channel');
             });
 
-            channel.error((error: any) => {
+            channel.error((error: Record<string, unknown>) => {
                 console.error('ServerNotificationService: ❌ Channel subscription error:', error);
             });
 
@@ -106,7 +106,7 @@ export class ServerNotificationService {
     /**
      * Handle incoming server notifications
      */
-    private static async handleServerNotification(event: any) {
+    private static async handleServerNotification(event: ServerNotificationEvent) {
         console.log('ServerNotificationService: 📨 Processing notification event:', event);
 
         if (event.notification) {
@@ -119,7 +119,7 @@ export class ServerNotificationService {
                 body: message,
                 icon: '/favicon.ico',
                 tag: type || 'server-notification',
-                data: event.notification,
+                data: event.notification as Record<string, unknown>,
             });
 
             if (notificationShown) {
@@ -140,7 +140,7 @@ export class ServerNotificationService {
         body: string;
         icon: string;
         tag: string;
-        data: any;
+        data: Record<string, unknown>;
     }): Promise<boolean> {
         // Method 1: Try service worker controller
         if (navigator.serviceWorker && navigator.serviceWorker.controller) {

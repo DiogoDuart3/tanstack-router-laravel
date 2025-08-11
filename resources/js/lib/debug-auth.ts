@@ -98,4 +98,4 @@ export class AuthDebugger {
 }
 
 // Make available globally for testing
-(window as any).debugAuth = AuthDebugger;
+window.debugAuth = AuthDebugger;

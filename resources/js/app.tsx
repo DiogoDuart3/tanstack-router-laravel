@@ -50,10 +50,10 @@ setTimeout(() => {
 }, 1000); // 1 second delay to allow auth to complete
 
 // Make test functions globally available for debugging
-(window as any).testServerNotification = ServerNotificationService.testServiceWorkerNotification;
-(window as any).reinitNotifications = ServerNotificationService.forceReInitialize;
-(window as any).checkForUpdates = () => swUpdater.forceUpdateCheck();
-(window as any).applyUpdate = () => swUpdater.applyUpdate();
+window.testServerNotification = ServerNotificationService.testServiceWorkerNotification;
+window.reinitNotifications = ServerNotificationService.forceReInitialize;
+window.checkForUpdates = () => swUpdater.forceUpdateCheck();
+window.applyUpdate = () => swUpdater.applyUpdate();
 
 // Initialize auth debugger
 AuthDebugger.logCurrentState();

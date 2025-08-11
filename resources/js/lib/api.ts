@@ -321,7 +321,7 @@ export const notificationApi = {
             notifications: Array<{
                 id: string;
                 type: string;
-                data: any;
+                data: Record<string, unknown>;
                 read_at: string | null;
                 created_at: string;
             }>;

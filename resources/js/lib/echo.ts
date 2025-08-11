@@ -39,8 +39,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
             },
         },
         authEndpoint: '/broadcasting/auth',
-        // @ts-expect-error - Echo configuration type is complex
-    } as any);
+    } as ConstructorParameters<typeof Echo>[0]);
 
     console.log('Echo: Instance created:', echo);
 } else {
