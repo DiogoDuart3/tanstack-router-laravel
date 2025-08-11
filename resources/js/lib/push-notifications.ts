@@ -153,6 +153,14 @@ export class PushNotificationManager {
      */
     private static async sendSubscriptionToServer(subscription: PushSubscription): Promise<void> {
         try {
+            const subscriptionData = {
+                endpoint: subscription.endpoint,
+                keys: {
+                    p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')!))),
+                    auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth')!)))
+                }
+            };
+
             const token = localStorage.getItem('auth_token');
             const response = await fetch('/api/push/subscribe', {
                 method: 'POST',
@@ -164,9 +172,7 @@ export class PushNotificationManager {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                     ...(token && { Authorization: `Bearer ${token}` }),
                 },
-                body: JSON.stringify({
-                    subscription: subscription.toJSON()
-                })
+                body: JSON.stringify(subscriptionData)
             });
 
             if (!response.ok) {
