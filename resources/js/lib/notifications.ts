@@ -143,8 +143,8 @@ export class NotificationManager {
                 return permission as NotificationPermissionStatus;
             } else {
                 // Standard permission request for other browsers
-                const permission = await Notification.requestPermission();
-                return permission as NotificationPermissionStatus;
+            const permission = await Notification.requestPermission();
+            return permission as NotificationPermissionStatus;
             }
         } catch (error) {
             console.error('Error requesting notification permission:', error);
@@ -418,18 +418,12 @@ export class NotificationManager {
                                     // Get service worker registration with improved handling
             console.log('Getting service worker registration...');
 
-            // Check service worker state first
-            console.log('SW Controller:', navigator.serviceWorker.controller);
-            console.log('SW Ready state available:', 'ready' in navigator.serviceWorker);
-
             // Check for service worker registration at root scope
             let registration = await navigator.serviceWorker.getRegistration('/');
-            console.log('Root scope registration:', registration);
 
             // If not found, check for any registration as fallback
             if (!registration) {
                 const registrations = await navigator.serviceWorker.getRegistrations();
-                console.log('All registrations:', registrations);
                 if (registrations.length > 0) {
                     registration = registrations[0]; // Use the first available registration
                     console.log(`Found service worker registration at scope: ${registration.scope}`);
@@ -580,7 +574,7 @@ export class NotificationManager {
                 });
 
                 readyRegistration = await readyPromise;
-                console.log('✅ Service worker ready');
+            console.log('✅ Service worker ready');
             }
 
             // Get VAPID key

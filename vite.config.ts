@@ -66,29 +66,16 @@ export default defineConfig({
         }),
         VitePWA({
             registerType: 'autoUpdate',
-            strategies: 'generateSW',
+            strategies: 'injectManifest',
+            srcDir: 'resources/js',
+            filename: 'sw.ts',
             scope: '/',
             outDir: 'public',
-            workbox: {
-                globPatterns: ['**/*.{js,css,html,png,svg}'], // Removed ico to avoid favicon.ico issues
-                globIgnores: ['**/favicon.ico'], // Explicitly ignore favicon.ico
-                navigateFallback: null, // Disable navigation fallback to prevent index.html errors
-                runtimeCaching: [
-                    {
-                        urlPattern: /^https:\/\/fonts\.googleapis\.com/,
-                        handler: 'CacheFirst',
-                        options: {
-                            cacheName: 'google-fonts-stylesheets',
-                        },
-                    },
-                    {
-                        urlPattern: /^https:\/\/fonts\.gstatic\.com/,
-                        handler: 'CacheFirst',
-                        options: {
-                            cacheName: 'google-fonts-webfonts',
-                        },
-                    },
-                ],
+            injectManifest: {
+                swSrc: 'resources/js/sw.ts',
+                swDest: 'public/sw.js',
+                globPatterns: ['**/*.{js,css,html,png,svg}'],
+                globIgnores: ['**/favicon.ico'],
             },
             manifest: {
                 name: 'Laravel TanStack Router App',
