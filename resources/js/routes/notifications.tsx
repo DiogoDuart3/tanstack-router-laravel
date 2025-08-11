@@ -1,5 +1,4 @@
 import NotificationDemo from '@/components/notification-demo';
-import { PushNotificationDemo } from '@/components/push-notification-demo';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/notifications')({
@@ -18,7 +17,6 @@ function NotificationsPage() {
 
             <div className="space-y-8">
                 <NotificationDemo />
-                <PushNotificationDemo />
             </div>
         </div>
     );
