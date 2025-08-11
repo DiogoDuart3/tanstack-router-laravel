@@ -15,9 +15,20 @@ import { swUpdater } from './lib/serviceWorkerUpdater';
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker
-            .register('/build/sw.js')
+            .register('/sw.js', {
+                scope: '/'
+            })
             .then((registration) => {
                 console.log('SW registered: ', registration);
+                console.log('SW scope: ', registration.scope);
+
+                // Wait for the service worker to control this page
+                if (!navigator.serviceWorker.controller) {
+                    console.log('SW: Waiting for service worker to take control...');
+                    navigator.serviceWorker.addEventListener('controllerchange', () => {
+                        console.log('SW: Service worker now controlling the page');
+                    });
+                }
             })
             .catch((registrationError) => {
                 console.log('SW registration failed: ', registrationError);

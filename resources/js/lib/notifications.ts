@@ -27,6 +27,65 @@ export class NotificationManager {
     }
 
     /**
+     * Check if this is iOS Safari and get version info
+     */
+    static getIOSInfo(): { isIOS: boolean; version?: { major: number; minor: number; patch?: number }; isStandalone: boolean } {
+        const userAgent = navigator.userAgent;
+        const isIOS = /iP(ad|hone|od)/.test(userAgent) && !(window as any).MSStream;
+
+        if (!isIOS) {
+            return { isIOS: false, isStandalone: false };
+        }
+
+        // Check if running as standalone PWA
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                           (navigator as any).standalone === true;
+
+        // Extract iOS version
+        const versionMatch = userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/);
+        let version;
+        if (versionMatch) {
+            version = {
+                major: parseInt(versionMatch[1], 10),
+                minor: parseInt(versionMatch[2], 10),
+                patch: versionMatch[3] ? parseInt(versionMatch[3], 10) : 0
+            };
+        }
+
+        return { isIOS, version, isStandalone };
+    }
+
+    /**
+     * Check if iOS Safari supports push notifications
+     */
+    static isIOSPushSupported(): boolean {
+        const iosInfo = this.getIOSInfo();
+
+        if (!iosInfo.isIOS) {
+            return true; // Not iOS, assume supported if other checks pass
+        }
+
+        // iOS Safari 16.4+ is required for push notifications
+        if (iosInfo.version) {
+            const { major, minor } = iosInfo.version;
+            const supportsNotifications = major > 16 || (major === 16 && minor >= 4);
+
+            if (!supportsNotifications) {
+                console.warn(`iOS ${major}.${minor} detected. Push notifications require iOS 16.4+`);
+                return false;
+            }
+        }
+
+        // For full push notification support, the app should be installed as PWA
+        if (!iosInfo.isStandalone) {
+            console.warn('iOS Safari: For best notification experience, install this app to your home screen');
+            // Still return true to allow basic notifications, but warn about limitations
+        }
+
+        return true;
+    }
+
+    /**
      * Check if service worker is available for background notifications
      */
     static isServiceWorkerSupported(): boolean {
@@ -56,11 +115,45 @@ export class NotificationManager {
             return 'granted';
         }
 
+        const iosInfo = this.getIOSInfo();
+
+        // Request permission with iOS Safari specific handling
         try {
-            const permission = await Notification.requestPermission();
-            return permission as NotificationPermissionStatus;
+            // iOS Safari requires user gesture and has stricter timing
+            if (iosInfo.isIOS) {
+                console.log('iOS Safari: Requesting notification permission...');
+
+                // Ensure we're in a user gesture context
+                if (!iosInfo.isStandalone) {
+                    console.warn('iOS Safari: Permission request may fail if not triggered by user interaction');
+                }
+
+                // iOS Safari specific permission request
+                const permission = await new Promise<NotificationPermission>((resolve) => {
+                    const result = Notification.requestPermission((perm) => {
+                        resolve(perm);
+                    });
+
+                    // Handle promise-based API (newer iOS)
+                    if (result && typeof result.then === 'function') {
+                        result.then(resolve);
+                    }
+                });
+
+                return permission as NotificationPermissionStatus;
+            } else {
+                // Standard permission request for other browsers
+                const permission = await Notification.requestPermission();
+                return permission as NotificationPermissionStatus;
+            }
         } catch (error) {
             console.error('Error requesting notification permission:', error);
+
+            // iOS Safari specific error handling
+            if (iosInfo.isIOS) {
+                console.error('iOS Safari: Permission request failed. Ensure this is triggered by user interaction.');
+            }
+
             return 'denied';
         }
     }
@@ -76,7 +169,65 @@ export class NotificationManager {
             return false;
         }
 
+        const iosInfo = this.getIOSInfo();
+
         try {
+            // iOS Safari specific notification handling
+            if (iosInfo.isIOS) {
+                console.log('iOS Safari: Attempting to show notification');
+
+                // For iOS Safari, prefer service worker notifications when in PWA mode
+                if (iosInfo.isStandalone && this.isServiceWorkerSupported() && 'serviceWorker' in navigator) {
+                    try {
+                        const registration = await navigator.serviceWorker.ready;
+                        if (registration && registration.showNotification) {
+                            await registration.showNotification(options.title, {
+                                body: options.body,
+                                icon: options.icon || '/favicon.ico',
+                                badge: options.badge,
+                                tag: options.tag,
+                                data: options.data,
+                                requireInteraction: options.requireInteraction,
+                                silent: options.silent,
+                            });
+                            console.log('iOS Safari: Service worker notification shown');
+                            return true;
+                        }
+                    } catch (swError) {
+                        console.warn('iOS Safari: Service worker notification failed, falling back to browser notification:', swError);
+                    }
+                }
+
+                // Fallback to browser notification for iOS Safari
+                try {
+                    const notification = new Notification(options.title, {
+                        body: options.body,
+                        icon: options.icon || '/favicon.ico',
+                        tag: options.tag,
+                        data: options.data,
+                    });
+
+                    // iOS Safari handles notification lifecycle differently
+                    if (!options.requireInteraction) {
+                        setTimeout(() => {
+                            try {
+                                notification.close();
+                            } catch (e) {
+                                // iOS Safari may not allow programmatic close
+                                console.debug('iOS Safari: Could not programmatically close notification');
+                            }
+                        }, 5000);
+                    }
+
+                    console.log('iOS Safari: Browser notification shown');
+                    return true;
+                } catch (browserError) {
+                    console.error('iOS Safari: Browser notification failed:', browserError);
+                    return false;
+                }
+            }
+
+            // Standard notification handling for other browsers
             // Try to use service worker for PWA notifications first
             if (this.isServiceWorkerSupported() && 'serviceWorker' in navigator) {
                 const registration = await navigator.serviceWorker.ready;
@@ -89,7 +240,7 @@ export class NotificationManager {
                         data: options.data,
                         requireInteraction: options.requireInteraction,
                         silent: options.silent,
-                    } as any);
+                    });
                     return true;
                 }
             }
@@ -102,7 +253,7 @@ export class NotificationManager {
                 data: options.data,
                 requireInteraction: options.requireInteraction,
                 silent: options.silent,
-            } as any);
+            });
 
             // Auto-close after 5 seconds unless requireInteraction is true
             if (!options.requireInteraction) {
@@ -114,6 +265,12 @@ export class NotificationManager {
             return true;
         } catch (error) {
             console.error('Error showing notification:', error);
+
+            // iOS Safari specific error handling
+            if (iosInfo.isIOS) {
+                console.error('iOS Safari: Notification failed. Ensure permission is granted and app is installed as PWA for best experience.');
+            }
+
             return false;
         }
     }
@@ -186,11 +343,18 @@ export class NotificationManager {
      * Check if push notifications are supported
      */
     static isPushSupported(): boolean {
-        return (
+        const basicSupport = (
             'serviceWorker' in navigator &&
             'PushManager' in window &&
             'Notification' in window
         );
+
+        if (!basicSupport) {
+            return false;
+        }
+
+        // Check iOS-specific requirements
+        return this.isIOSPushSupported();
     }
 
     /**
@@ -225,9 +389,23 @@ export class NotificationManager {
             return false;
         }
 
+        const iosInfo = this.getIOSInfo();
+
         try {
             console.log('Starting push subscription process...');
-            
+
+            // iOS Safari specific handling
+            if (iosInfo.isIOS) {
+                console.log(`iOS Safari ${iosInfo.version?.major}.${iosInfo.version?.minor} detected`);
+
+                if (!iosInfo.isStandalone) {
+                    console.warn('iOS Safari: Running in browser mode. Install as PWA for full notification support.');
+                }
+
+                // Add delay for iOS Safari to ensure proper initialization
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
             // Request notification permission first
             console.log('Requesting notification permission...');
             const permission = await this.requestPermission();
@@ -237,14 +415,152 @@ export class NotificationManager {
             }
             console.log('✅ Permission granted');
 
-            // Get service worker registration
+                                    // Get service worker registration with improved handling
             console.log('Getting service worker registration...');
-            const registration = await navigator.serviceWorker.ready;
+
+            // Check for service worker registration at root scope
+            let registration = await navigator.serviceWorker.getRegistration('/');
+
+            // If not found, check for any registration as fallback
             if (!registration) {
-                console.error('Service worker not ready');
-                return false;
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                if (registrations.length > 0) {
+                    registration = registrations[0]; // Use the first available registration
+                    console.log(`Found service worker registration at scope: ${registration.scope}`);
+                }
             }
-            console.log('✅ Service worker ready');
+
+            if (!registration) {
+                console.log('No existing service worker registration found, waiting for registration...');
+
+                // Wait for service worker to register with timeout
+                const registrationPromise = new Promise<ServiceWorkerRegistration>((resolve, reject) => {
+                    const checkRegistration = async () => {
+                        // Check all possible scopes (prefer root scope for page control)
+                        let reg = await navigator.serviceWorker.getRegistration('/');
+                        if (!reg) {
+                            const regs = await navigator.serviceWorker.getRegistrations();
+                            if (regs.length > 0) {
+                                reg = regs[0];
+                            }
+                        }
+
+                        if (reg) {
+                            console.log(`Service worker registration found at scope: ${reg.scope}`);
+                            resolve(reg);
+                        } else {
+                            setTimeout(checkRegistration, 100);
+                        }
+                    };
+                    checkRegistration();
+
+                    // Timeout after reasonable time
+                    setTimeout(() => reject(new Error('Service worker registration timeout - service worker may not be properly configured')), iosInfo.isIOS ? 15000 : 10000);
+                });
+
+                registration = await registrationPromise;
+            }
+
+                        // Now wait for the service worker to be ready with enhanced debugging
+            console.log('Service worker found, waiting for it to be ready...');
+            console.log('Registration state:', {
+                installing: !!registration.installing,
+                waiting: !!registration.waiting,
+                active: !!registration.active,
+                scope: registration.scope
+            });
+
+            // Check if service worker is already active and ready
+            let readyRegistration: ServiceWorkerRegistration;
+
+            if (registration.active && registration.active.state === 'activated') {
+                console.log('✅ Service worker already active and ready');
+                readyRegistration = registration;
+            } else {
+                console.log('Service worker not yet active, waiting for ready state...');
+
+                const readyPromise = new Promise<ServiceWorkerRegistration>((resolve, reject) => {
+                    let resolved = false;
+
+                    const resolveOnce = (reg: ServiceWorkerRegistration) => {
+                        if (!resolved) {
+                            resolved = true;
+                            console.log('✅ Service worker ready event fired');
+                            resolve(reg);
+                        }
+                    };
+
+                    // Method 1: Use navigator.serviceWorker.ready
+                    navigator.serviceWorker.ready.then(resolveOnce).catch(error => {
+                        console.error('Service worker ready promise rejected:', error);
+                        if (!resolved) {
+                            resolved = true;
+                            reject(error);
+                        }
+                    });
+
+                    // Method 2: Check if current registration becomes active
+                    const checkActivation = () => {
+                        if (registration.active && registration.active.state === 'activated') {
+                            resolveOnce(registration);
+                        }
+                    };
+
+                    // Check immediately
+                    checkActivation();
+
+                    // Method 3: Listen for state changes
+                    if (registration.installing) {
+                        registration.installing.addEventListener('statechange', () => {
+                            console.log('Installing service worker state changed:', registration.installing?.state);
+                            checkActivation();
+                        });
+                    }
+
+                    if (registration.waiting) {
+                        registration.waiting.addEventListener('statechange', () => {
+                            console.log('Waiting service worker state changed:', registration.waiting?.state);
+                            checkActivation();
+                        });
+                    }
+
+                    // Method 4: Poll for activation (fallback)
+                    const pollInterval = setInterval(() => {
+                        if (resolved) {
+                            clearInterval(pollInterval);
+                            return;
+                        }
+
+                        console.log('Polling service worker state...');
+                        checkActivation();
+
+                        // Check for new registrations at root scope
+                        navigator.serviceWorker.getRegistration('/').then(reg => {
+                            if (reg && reg.active && reg.active.state === 'activated') {
+                                clearInterval(pollInterval);
+                                resolveOnce(reg);
+                            }
+                        });
+                    }, 500);
+
+                    // Timeout with extended time for iOS
+                    setTimeout(() => {
+                        clearInterval(pollInterval);
+                        if (!resolved) {
+                            console.error('Service worker ready timeout - current state:', {
+                                installing: registration.installing?.state,
+                                waiting: registration.waiting?.state,
+                                active: registration.active?.state
+                            });
+                            resolved = true;
+                            reject(new Error('Service worker ready timeout'));
+                        }
+                    }, iosInfo.isIOS ? 20000 : 15000);
+                });
+
+                readyRegistration = await readyPromise;
+                console.log('✅ Service worker ready');
+            }
 
             // Get VAPID key
             console.log('Fetching VAPID key from server...');
@@ -257,7 +573,7 @@ export class NotificationManager {
 
             // Check if already subscribed
             console.log('Checking existing subscription...');
-            const existingSubscription = await registration.pushManager.getSubscription();
+            const existingSubscription = await readyRegistration.pushManager.getSubscription();
             if (existingSubscription) {
                 console.log('Already subscribed to push notifications, sending to server...');
                 await this.sendSubscriptionToServer(existingSubscription);
@@ -265,12 +581,19 @@ export class NotificationManager {
                 return true;
             }
 
-            // Subscribe to push notifications
+            // Subscribe to push notifications with iOS Safari specific options
             console.log('Creating new push subscription...');
-            const subscription = await registration.pushManager.subscribe({
+            const subscriptionOptions: PushSubscriptionOptions = {
                 userVisibleOnly: true,
-                applicationServerKey: this.urlBase64ToUint8Array(vapidKey).buffer,
-            });
+                applicationServerKey: this.urlBase64ToUint8Array(vapidKey)
+            };
+
+            // iOS Safari requires the applicationServerKey as ArrayBuffer
+            if (iosInfo.isIOS) {
+                subscriptionOptions.applicationServerKey = this.urlBase64ToUint8Array(vapidKey).buffer;
+            }
+
+            const subscription = await readyRegistration.pushManager.subscribe(subscriptionOptions);
             console.log('✅ New subscription created:', subscription);
 
             // Send subscription to server
@@ -281,6 +604,16 @@ export class NotificationManager {
 
         } catch (error) {
             console.error('Error subscribing to push notifications:', error);
+
+            // iOS Safari specific error handling
+            if (iosInfo.isIOS && error instanceof Error) {
+                if (error.message.includes('not supported')) {
+                    console.error('iOS Safari: Push notifications not supported. Ensure iOS 16.4+ and PWA installation.');
+                } else if (error.message.includes('permission')) {
+                    console.error('iOS Safari: Permission denied. User must grant permission manually.');
+                }
+            }
+
             return false;
         }
     }

@@ -38,7 +38,7 @@ export default function NotificationDemo() {
             } else {
                 setLastNotificationResult('✅ Notifications enabled (push not supported)');
             }
-            
+
             await refreshStatus();
         } catch (error) {
             setLastNotificationResult('Error enabling notifications: ' + (error as Error).message);
@@ -53,7 +53,7 @@ export default function NotificationDemo() {
             const success = await NotificationManager.showWelcomeNotification();
             setLastNotificationResult(success ? 'Welcome notification sent!' : 'Failed to send notification');
         } catch (error) {
-            setLastNotificationResult('Error sending notification');
+            setLastNotificationResult('Error sending notification: ' + (error as Error).message);
         } finally {
             setIsLoading(false);
         }

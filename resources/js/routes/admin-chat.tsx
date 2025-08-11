@@ -28,7 +28,7 @@ function AdminChatComponent() {
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Get user data for UI display (non-blocking)  
+    // Get user data for UI display (non-blocking)
     const { data: userData } = useQuery({
         queryKey: ['auth', 'user'],
         queryFn: authApi.getUser,

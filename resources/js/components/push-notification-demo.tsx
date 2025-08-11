@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PushNotificationManager } from '../lib/push-notifications';
+import { NotificationManager } from '../lib/notifications';
 
 export function PushNotificationDemo() {
     const [isSubscribed, setIsSubscribed] = useState(false);
@@ -9,11 +9,32 @@ export function PushNotificationDemo() {
 
     useEffect(() => {
         const checkSupport = async () => {
-            const supported = 'serviceWorker' in navigator && 'PushManager' in window;
+            const basicSupport = 'serviceWorker' in navigator && 'PushManager' in window;
+
+            // Check iOS-specific support
+            let iosSupported = true;
+            if (basicSupport) {
+                const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent);
+                if (isIOS) {
+                    const versionMatch = navigator.userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/);
+                    if (versionMatch) {
+                        const major = parseInt(versionMatch[1], 10);
+                        const minor = parseInt(versionMatch[2], 10);
+                        iosSupported = major > 16 || (major === 16 && minor >= 4);
+
+                        if (!iosSupported) {
+                            console.warn(`iOS ${major}.${minor} detected. Push notifications require iOS 16.4+`);
+                        }
+                    }
+                }
+            }
+
+            const supported = basicSupport && iosSupported;
             setIsSupported(supported);
-            
+
             if (supported) {
-                const subscribed = await PushNotificationManager.isSubscribed();
+                // Check if already subscribed
+                const subscribed = await NotificationManager.isSubscribedToPush();
                 setIsSubscribed(subscribed);
                 setPermission(Notification.permission);
             }
@@ -25,11 +46,13 @@ export function PushNotificationDemo() {
     const handleSubscribe = async () => {
         setLoading(true);
         try {
-            const success = await PushNotificationManager.initialize();
+            const success = await NotificationManager.subscribeToPush();
             if (success) {
                 setIsSubscribed(true);
                 setPermission('granted');
                 console.log('Successfully subscribed to push notifications');
+            } else {
+                console.error('Failed to subscribe to push notifications');
             }
         } catch (error) {
             console.error('Failed to subscribe to push notifications:', error);
@@ -41,10 +64,12 @@ export function PushNotificationDemo() {
     const handleUnsubscribe = async () => {
         setLoading(true);
         try {
-            const success = await PushNotificationManager.unsubscribe();
+            const success = await NotificationManager.unsubscribeFromPush();
             if (success) {
                 setIsSubscribed(false);
                 console.log('Successfully unsubscribed from push notifications');
+            } else {
+                console.error('Failed to unsubscribe from push notifications');
             }
         } catch (error) {
             console.error('Failed to unsubscribe from push notifications:', error);
@@ -56,8 +81,12 @@ export function PushNotificationDemo() {
     const handleTestPush = async () => {
         setLoading(true);
         try {
-            await PushNotificationManager.testPushNotification();
-            console.log('Test push notification sent');
+            const success = await NotificationManager.testPushNotification();
+            if (success) {
+                console.log('Test push notification sent!');
+            } else {
+                console.error('Failed to send test push notification');
+            }
         } catch (error) {
             console.error('Failed to send test push notification:', error);
         } finally {
@@ -91,7 +120,7 @@ export function PushNotificationDemo() {
                 pushManager: !!registration.pushManager,
                 showNotification: typeof registration.showNotification
             });
-            
+
             // Test service worker notification directly
             try {
                 await registration.showNotification('🔧 SW Direct Test', {
@@ -107,11 +136,26 @@ export function PushNotificationDemo() {
     };
 
     if (!isSupported) {
+        const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent);
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+
         return (
             <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <p className="text-red-600 dark:text-red-400">
+                <p className="text-red-600 dark:text-red-400 mb-2">
                     Push notifications are not supported in this browser.
                 </p>
+                {isIOS && (
+                    <div className="text-sm text-orange-600 dark:text-orange-400">
+                        <p className="font-medium mb-1">For iPhone users:</p>
+                        <ul className="list-disc ml-4 space-y-1">
+                            <li>iOS 16.4+ is required for push notifications</li>
+                            {!isStandalone && (
+                                <li>Install this app to your home screen for full notification support</li>
+                            )}
+                            <li>Tap the Share button → "Add to Home Screen"</li>
+                        </ul>
+                    </div>
+                )}
             </div>
         );
     }
@@ -121,7 +165,7 @@ export function PushNotificationDemo() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Background Push Notifications
             </h3>
-            
+
             <div className="space-y-2">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                     Status: {isSubscribed ? '✅ Subscribed' : '❌ Not subscribed'}

@@ -10,28 +10,59 @@ export class PushNotificationManager {
      * Initialize push notifications
      */
     static async initialize(): Promise<boolean> {
+        // Check basic support first
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
             console.warn('PushNotificationManager: Push notifications not supported');
             return false;
         }
 
+        // Check iOS Safari specific requirements
+        const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent);
+        if (isIOS) {
+            const versionMatch = navigator.userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/);
+            if (versionMatch) {
+                const major = parseInt(versionMatch[1], 10);
+                const minor = parseInt(versionMatch[2], 10);
+                if (major < 16 || (major === 16 && minor < 4)) {
+                    console.warn(`PushNotificationManager: iOS ${major}.${minor} detected. Push notifications require iOS 16.4+`);
+                    return false;
+                }
+            }
+
+            // Check if running as standalone PWA
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                               (navigator as any).standalone === true;
+            if (!isStandalone) {
+                console.warn('PushNotificationManager: iOS Safari detected in browser mode. Install as PWA for best experience.');
+            }
+
+            // Add iOS Safari initialization delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
         try {
             // Get VAPID public key from server
             await this.fetchVapidKey();
-            
+
             // Check current permission status without requesting
             const permission = Notification.permission;
             console.log('PushNotificationManager: Permission status:', permission);
-            
+
             // Only subscribe if permission is already granted
             if (permission === 'granted') {
                 await this.subscribe();
             }
-            
+
             console.log('PushNotificationManager: ✅ Successfully initialized');
             return true;
         } catch (error) {
             console.error('PushNotificationManager: ❌ Failed to initialize:', error);
+
+            // iOS Safari specific error messaging
+            if (isIOS) {
+                console.error('PushNotificationManager: iOS Safari issues. Ensure iOS 16.4+, PWA installation, and proper permissions.');
+            }
+
             return false;
         }
     }
@@ -88,7 +119,7 @@ export class PushNotificationManager {
 
         try {
             const registration = await navigator.serviceWorker.ready;
-            
+
             // Check if already subscribed
             const existingSubscription = await registration.pushManager.getSubscription();
             if (existingSubscription) {
@@ -106,10 +137,10 @@ export class PushNotificationManager {
 
             console.log('PushNotificationManager: ✅ New subscription created');
             this.pushSubscription = subscription;
-            
+
             // Send subscription to server
             await this.sendSubscriptionToServer(subscription);
-            
+
             return subscription;
         } catch (error) {
             console.error('PushNotificationManager: ❌ Failed to subscribe:', error);
@@ -157,7 +188,7 @@ export class PushNotificationManager {
             if (this.pushSubscription) {
                 await this.pushSubscription.unsubscribe();
                 this.pushSubscription = null;
-                
+
                 // Notify server about unsubscription
                 const token = localStorage.getItem('auth_token');
                 await fetch('/api/push/unsubscribe', {
@@ -170,7 +201,7 @@ export class PushNotificationManager {
                         ...(token && { Authorization: `Bearer ${token}` }),
                     }
                 });
-                
+
                 console.log('PushNotificationManager: ✅ Unsubscribed from push notifications');
                 return true;
             }
@@ -192,7 +223,7 @@ export class PushNotificationManager {
 
             const registration = await navigator.serviceWorker.ready;
             const subscription = await registration.pushManager.getSubscription();
-            
+
             return subscription !== null;
         } catch (error) {
             console.error('PushNotificationManager: ❌ Failed to check subscription status:', error);
@@ -258,10 +289,10 @@ export class PushNotificationManager {
 
             const result = await response.json();
             console.log('PushNotificationManager: ✅ Test notification sent:', result);
-            
+
             // Show alert with the response for debugging
             alert(`Push notification sent! Response: ${JSON.stringify(result, null, 2)}`);
-            
+
         } catch (error) {
             console.error('PushNotificationManager: ❌ Failed to send test notification:', error);
             alert(`Failed to send push notification: ${error.message}`);

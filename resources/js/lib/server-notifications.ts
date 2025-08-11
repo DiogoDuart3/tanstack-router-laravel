@@ -30,7 +30,7 @@ export class ServerNotificationService {
                 if (isAuthenticated) {
                     console.log('ServerNotificationService: User authenticated, setting up listener');
                     this.setupNotificationListener();
-                    
+
                     // Initialize push notifications for background support
                     PushNotificationManager.initialize().then((success) => {
                         if (success) {
@@ -39,7 +39,7 @@ export class ServerNotificationService {
                             console.warn('ServerNotificationService: ⚠️ Push notifications failed to initialize');
                         }
                     });
-                    
+
                     this.initialized = true;
                     console.log('ServerNotificationService: ✅ Initialized with Echo and auth');
                 } else {
@@ -106,50 +106,102 @@ export class ServerNotificationService {
     /**
      * Handle incoming server notifications
      */
-    private static handleServerNotification(event: any) {
+    private static async handleServerNotification(event: any) {
         console.log('ServerNotificationService: 📨 Processing notification event:', event);
 
         if (event.notification) {
             const { title, message, icon, type } = event.notification;
             console.log('ServerNotificationService: 📋 Notification data:', { title, message, icon, type });
 
-            // Send to service worker for system notification (works when app is not in focus)
-            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-                console.log('ServerNotificationService: 📤 Sending to service worker...');
-                navigator.serviceWorker.controller.postMessage({
-                    type: 'SERVER_NOTIFICATION',
-                    payload: {
-                        title: title || 'Server Notification',
-                        body: message,
-                        icon: '/favicon.ico',
-                        tag: type || 'server-notification',
-                        data: event.notification,
-                    }
-                });
-                console.log('ServerNotificationService: ✅ Notification sent to service worker:', title);
-            } else {
-                console.warn('ServerNotificationService: ⚠️ Service worker not available, using fallback notification');
-                console.log('ServerNotificationService: SW status:', {
-                    hasServiceWorker: !!navigator.serviceWorker,
-                    hasController: !!navigator.serviceWorker?.controller
-                });
+            // Try multiple methods to show the notification
+            const notificationShown = await this.tryShowServerNotification({
+                title: title || 'Server Notification',
+                body: message,
+                icon: '/favicon.ico',
+                tag: type || 'server-notification',
+                data: event.notification,
+            });
 
-                // Fallback: try to show browser notification directly (only works when app is in focus)
-                import('./notifications').then(({ NotificationManager }) => {
-                    console.log('ServerNotificationService: 📢 Showing fallback notification');
-                    NotificationManager.showNotification({
-                        title: title || 'Server Notification',
-                        body: message,
-                        icon: '/favicon.ico',
-                        tag: 'server-notification',
-                        requireInteraction: false,
-                        vibrate: [200, 100, 200],
-                    });
-                });
+            if (notificationShown) {
+                console.log('ServerNotificationService: ✅ Notification shown successfully:', title);
+            } else {
+                console.warn('ServerNotificationService: ❌ Failed to show notification:', title);
             }
         } else {
             console.warn('ServerNotificationService: ⚠️ No notification data in event:', event);
         }
+    }
+
+    /**
+     * Try multiple methods to show server notification
+     */
+    private static async tryShowServerNotification(notificationData: {
+        title: string;
+        body: string;
+        icon: string;
+        tag: string;
+        data: any;
+    }): Promise<boolean> {
+        // Method 1: Try service worker controller
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            try {
+                console.log('ServerNotificationService: 📤 Sending to service worker controller...');
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'SERVER_NOTIFICATION',
+                    payload: notificationData
+                });
+                console.log('ServerNotificationService: ✅ Notification sent to service worker');
+                return true;
+            } catch (error) {
+                console.error('ServerNotificationService: ❌ Failed to send to service worker:', error);
+            }
+        }
+
+        // Method 2: Try service worker registration directly
+        if ('serviceWorker' in navigator) {
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                if (registration && registration.showNotification) {
+                    console.log('ServerNotificationService: 📤 Using service worker registration...');
+                    await registration.showNotification(notificationData.title, {
+                        body: notificationData.body,
+                        icon: notificationData.icon,
+                        tag: notificationData.tag,
+                        data: notificationData.data,
+                        requireInteraction: false,
+                    });
+                    console.log('ServerNotificationService: ✅ Notification shown via registration');
+                    return true;
+                }
+            } catch (error) {
+                console.error('ServerNotificationService: ❌ Failed to use service worker registration:', error);
+            }
+        }
+
+        // Method 3: Fallback to browser notification
+        try {
+            console.log('ServerNotificationService: 📢 Using fallback browser notification...');
+            const { NotificationManager } = await import('./notifications');
+
+            const success = await NotificationManager.showNotification({
+                title: notificationData.title,
+                body: notificationData.body,
+                icon: notificationData.icon,
+                tag: notificationData.tag,
+                requireInteraction: false,
+                vibrate: [200, 100, 200],
+            });
+
+            if (success) {
+                console.log('ServerNotificationService: ✅ Fallback notification shown');
+                return true;
+            }
+        } catch (error) {
+            console.error('ServerNotificationService: ❌ Failed to show fallback notification:', error);
+        }
+
+        console.warn('ServerNotificationService: ❌ All notification methods failed');
+        return false;
     }
 
     /**

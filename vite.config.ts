@@ -67,8 +67,11 @@ export default defineConfig({
         VitePWA({
             registerType: 'autoUpdate',
             strategies: 'generateSW',
+            scope: '/',
+            outDir: 'public',
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+                navigateFallback: null, // Disable navigation fallback to prevent index.html errors
                 runtimeCaching: [
                     {
                         urlPattern: /^https:\/\/fonts\.googleapis\.com/,
