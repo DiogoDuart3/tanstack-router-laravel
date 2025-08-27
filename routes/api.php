@@ -38,23 +38,30 @@ Route::get('health', function (Request $request) {
 Route::get('version', function () {
     $gitHash = null;
     $buildTimestamp = null;
+    $builtAt = null;
 
-    try {
-        $gitHash = trim(shell_exec('git rev-parse HEAD'));
-    } catch (Exception $e) {
-        // Fallback if git command fails
-    }
-
-    // Try to read build timestamp from a file if it exists
-    $buildFile = public_path('build.json');
+    // Read build info from storage directory
+    $buildFile = storage_path('app/build.json');
     if (file_exists($buildFile)) {
         $buildData = json_decode(file_get_contents($buildFile), true);
+        $gitHash = $buildData['version'] ?? null;
         $buildTimestamp = $buildData['timestamp'] ?? null;
+        $builtAt = $buildData['built_at'] ?? null;
+    }
+
+    // Fallback to git command if build.json doesn't exist
+    if (!$gitHash) {
+        try {
+            $gitHash = trim(shell_exec('git rev-parse HEAD'));
+        } catch (Exception $e) {
+            // Fallback if git command fails
+        }
     }
 
     return response()->json([
         'version' => $gitHash ?: 'unknown',
         'build_timestamp' => $buildTimestamp,
+        'built_at' => $builtAt,
         'server_time' => now()->toISOString(),
     ]);
 });

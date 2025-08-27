@@ -22,6 +22,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
-public/build.json
-public/sw.js
-public/workbox-*.js
+/public/sw.js
+/public/workbox-*.js

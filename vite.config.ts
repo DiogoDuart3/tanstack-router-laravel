@@ -24,7 +24,7 @@ const commitHash = getGitCommitHash();
 const buildInfoPlugin = () => ({
     name: 'build-info',
     buildStart() {
-        // Write build info to public directory
+        // Write build info to storage directory
         const buildInfo = {
             version: commitHash,
             timestamp: buildTimestamp,
@@ -32,7 +32,7 @@ const buildInfoPlugin = () => ({
         };
 
         try {
-            writeFileSync('public/build.json', JSON.stringify(buildInfo, null, 2));
+            writeFileSync('storage/app/build.json', JSON.stringify(buildInfo, null, 2));
             console.log('✓ Generated build.json with version:', commitHash.substring(0, 8));
         } catch (error) {
             console.warn('Failed to write build.json:', error);
