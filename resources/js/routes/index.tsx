@@ -4,21 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { authApi, healthApi } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import {
-    ArrowRight,
-    CheckCircle2,
-    Code2,
-    Database,
-    Github,
-    Globe,
-    MessageCircle,
-    Palette,
-    Rocket,
-    Shield,
-    Smartphone,
-    TestTube,
-    Zap,
-} from 'lucide-react';
+import { ArrowRight, CheckCircle2, Code2, Database, Globe, MessageCircle, Palette, Rocket, Shield, Smartphone, TestTube, Zap } from 'lucide-react';
 
 export const Route = createFileRoute('/')({
     component: HomeComponent,
@@ -96,7 +82,7 @@ function HomeComponent() {
                     <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                         <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
                             <a href="https://github.com/your-username/tanstack-router-laravel" target="_blank" rel="noopener noreferrer">
-                                <Github className="mr-2 h-4 w-4" />
+                                <Code2 className="mr-2 h-4 w-4" />
                                 View on GitHub
                             </a>
                         </Button>

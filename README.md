@@ -10,7 +10,7 @@
 ![TanStack Router](https://img.shields.io/badge/TanStack%20Router-1.114-FF4154?style=for-the-badge&logo=react-router&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4.0-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 
-[🚀 Demo](https://your-demo-url.com) • [📖 Documentation](#-documentation) • [🎯 Features](#-features) • [⚡ Quick Start](#-quick-start)
+[🎯 Features](#-features) • [⚡ Quick Start](#-quick-start) • [🛠️ Tech Stack](#️-technology-stack)
 
 </div>
 
@@ -169,7 +169,7 @@ Before you begin, ensure you have the following installed:
 
 #### **1. Clone & Navigate**
 ```bash
-git clone https://github.com/your-username/tanstack-router-laravel.git
+git clone https://github.com/DiogoDuart3/tanstack-router-laravel.git
 cd tanstack-router-laravel
 ```
 
@@ -418,7 +418,7 @@ We welcome contributions! Here's how to get started:
 ### **🔧 Development Setup**
 ```bash
 # 1. Fork and clone the repository
-git clone https://github.com/your-username/tanstack-router-laravel.git
+git clone https://github.com/DiogoDuart3/tanstack-router-laravel.git
 
 # 2. Create a feature branch
 git checkout -b feature/amazing-feature
@@ -461,9 +461,8 @@ Special thanks to the teams behind:
 
 **⭐ Star this repository if you find it helpful!**
 
-[🐛 Report Bug](https://github.com/your-username/tanstack-router-laravel/issues) • 
-[✨ Request Feature](https://github.com/your-username/tanstack-router-laravel/issues) • 
-[💬 Join Discord](https://discord.gg/your-discord)
+[🐛 Report Bug](https://github.com/DiogoDuart3/tanstack-router-laravel/issues) • 
+[✨ Request Feature](https://github.com/DiogoDuart3/tanstack-router-laravel/issues)
 
 **Made with ❤️ for the Laravel and React community**
 

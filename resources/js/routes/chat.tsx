@@ -23,8 +23,8 @@ function ChatComponent() {
     const [isCurrentUserTyping, setIsCurrentUserTyping] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
-    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Get user data for UI display (non-blocking)
     const { data: userData } = useQuery({
@@ -199,10 +199,7 @@ function ChatComponent() {
                         Public Chat
                     </CardTitle>
                     <p className="text-sm text-muted-foreground">
-                        {isAuthenticated
-                            ? `Chatting as ${userData?.user?.name}`
-                            : 'Join the conversation! You can chat anonymously or sign in.'
-                        }
+                        {isAuthenticated ? `Chatting as ${userData?.user?.name}` : 'Join the conversation! You can chat anonymously or sign in.'}
                     </p>
                 </CardHeader>
 
