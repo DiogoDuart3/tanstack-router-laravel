@@ -8,7 +8,10 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TodoController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 // Auth routes - using API middleware but with session support
 Route::prefix('auth')->group(function () {
@@ -17,20 +20,66 @@ Route::prefix('auth')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
 });
 
-// Health check
+// Health check — runs lightweight liveness probes against core services.
 Route::get('health', function (Request $request) {
     $startTime = microtime(true);
 
-    // Simulate some processing time for more accurate measurement
-    usleep(1000); // 1ms delay
+    $check = function (callable $probe): array {
+        $start = microtime(true);
+        try {
+            $probe();
+            return [
+                'status' => 'ok',
+                'latency_ms' => round((microtime(true) - $start) * 1000, 2),
+                'error' => null,
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'status' => 'down',
+                'latency_ms' => round((microtime(true) - $start) * 1000, 2),
+                'error' => $e->getMessage(),
+            ];
+        }
+    };
 
-    $endTime = microtime(true);
-    $requestTime = ($endTime - $startTime) * 1000; // Convert to milliseconds
+    $checks = [
+        'database' => $check(fn () => DB::connection()->getPdo() && DB::select('select 1 as ok')),
+        'cache' => $check(function () {
+            $key = '__health_'.bin2hex(random_bytes(4));
+            Cache::put($key, '1', 5);
+            $ok = Cache::get($key) === '1';
+            Cache::forget($key);
+            if (! $ok) {
+                throw new \RuntimeException('cache round-trip failed');
+            }
+        }),
+        'storage' => $check(function () {
+            $disk = Storage::disk(config('filesystems.default'));
+            $key = '__health_'.bin2hex(random_bytes(4)).'.txt';
+            $disk->put($key, 'ok');
+            $ok = $disk->get($key) === 'ok';
+            $disk->delete($key);
+            if (! $ok) {
+                throw new \RuntimeException('storage round-trip failed');
+            }
+        }),
+    ];
+
+    $allOk = collect($checks)->every(fn ($c) => $c['status'] === 'ok');
+    $requestTime = (microtime(true) - $startTime) * 1000;
 
     return response()->json([
-        'status' => 'ok',
+        'status' => $allOk ? 'ok' : 'degraded',
         'timestamp' => now(),
-        'request_time_ms' => round($requestTime, 2)
+        'request_time_ms' => round($requestTime, 2),
+        'checks' => $checks,
+        'system' => [
+            'php_version' => PHP_VERSION,
+            'laravel_version' => app()->version(),
+            'environment' => app()->environment(),
+            'debug' => (bool) config('app.debug'),
+            'timezone' => config('app.timezone'),
+        ],
     ]);
 });
 

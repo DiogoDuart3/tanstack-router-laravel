@@ -126,10 +126,24 @@ export interface RecentActivityItem {
     created_at: string;
 }
 
+export interface HealthCheck {
+    status: 'ok' | 'down';
+    latency_ms: number;
+    error: string | null;
+}
+
 export interface HealthResponse {
-    status: string;
+    status: 'ok' | 'degraded';
     timestamp: string;
     request_time_ms: number;
+    checks: Record<string, HealthCheck>;
+    system: {
+        php_version: string;
+        laravel_version: string;
+        environment: string;
+        debug: boolean;
+        timezone: string;
+    };
 }
 
 // Event Types
