@@ -10,7 +10,7 @@
 ![TanStack Router](https://img.shields.io/badge/TanStack%20Router-1.114-FF4154?style=for-the-badge&logo=react-router&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4.0-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 
-[🎯 Features](#-features) • [⚡ Quick Start](#-quick-start) • [🛠️ Tech Stack](#️-technology-stack)
+[🚀 Demo](https://tan.diogodev.com) • [🎯 Features](#-features) • [⚡ Quick Start](#-quick-start) • [🛠️ Tech Stack](#️-technology-stack)
 
 </div>
 
